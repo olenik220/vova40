@@ -29,12 +29,12 @@ echo.
 
 :: Проверяем .env
 if not exist ".env" (
-    echo  ⚠ Файл настроек не найден.
-    echo     Создаю базовый .env...
-    echo     WEB_PASSWORD=secondhand > .env
-    echo     FLASK_SECRET_KEY=%random%%random%%random% >> .env
-    echo     Пароль по умолчанию: secondhand
+    echo  ⚠ Файл настроек .env не найден!
+    echo     Скопируй .env.example в .env и заполни WEB_PASSWORD.
+    echo     Сервер не запустится без настроек.
     echo.
+    pause
+    exit /b 1
 )
 
 :: Устанавливаем переменную PORT
