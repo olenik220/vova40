@@ -1,0 +1,82 @@
+   Avito API: подключено, токен готов
+   Avito: фоновая синхронизация статусов запущена (каждые 10 мин)
+40 Vova40 — учёт секонд-хенда
+   На этом ПК:  http://127.0.0.1:5000
+   С телефона:  http://192.168.0.107:5000
+   AI: YandexGPT
+   Нажми Ctrl+C для остановки.
+ * Serving Flask app 'app'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.107:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:127.0.0.1 - - [17/Oct/2026 04:03:16] "[32mPOST /login HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [17/Oct/2026 04:03:16] "GET / HTTP/1.1" 200 -
+ERROR:app:Exception on /add/base [POST]
+Traceback (most recent call last):
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 920, in full_dispatch_request
+    return self.finalize_request(rv)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 939, in finalize_request
+    response = self.make_response(rv)
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1212, in make_response
+    raise TypeError(
+    ...<3 lines>...
+    )
+TypeError: The view function for 'add_item' did not return a valid response. The function either returned None or ended without a return statement.
+INFO:werkzeug:127.0.0.1 - - [17/Oct/2026 04:03:16] "[35m[1mPOST /add/base HTTP/1.1[0m" 500 -
+ERROR:werkzeug:Error on request:
+Traceback (most recent call last):
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 920, in full_dispatch_request
+    return self.finalize_request(rv)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 939, in finalize_request
+    response = self.make_response(rv)
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1212, in make_response
+    raise TypeError(
+    ^
+TypeError: The view function for 'add_item' did not return a valid response. The function either returned None or ended without a return statement.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\werkzeug\serving.py", line 374, in run_wsgi
+    execute(self.server.app)
+    ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\werkzeug\serving.py", line 335, in execute
+    application_iter = app(environ, start_response)
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 860, in handle_exception
+    server_error = self.ensure_sync(handler)(server_error)
+  File "D:\deepseek\secondhand_local\app.py", line 97, in server_error
+    return render_template('500.html'), 500
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\templating.py", line 150, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\jinja2\loaders.py", line 126, in load
+    source, filename, uptodate = self.get_source(environment, name)
+                                 ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\templating.py", line 66, in get_source
+    return self._get_source_fast(environment, template)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Olenik_Nitro\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\templating.py", line 100, in _get_source_fast
+    raise TemplateNotFound(template)
+jinja2.exceptions.TemplateNotFound: 500.html

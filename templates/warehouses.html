@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -10,10 +10,7 @@
                background: #f5f5f5; color: #333; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .content { max-width: 400px; width: 100%; padding: 20px; }
         .header { text-align: center; margin-bottom: 24px; }
-        .header .logo { display: inline-flex; align-items: center; justify-content: center;
-                       background: linear-gradient(135deg, #4A90D9, #357ABD);
-                       color: white; border-radius: 12px; padding: 6px 14px;
-                       font-size: 28px; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }
+        .header .logo { display: block; width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 12px; box-shadow: 0 4px 12px rgba(0,0,0,.1); }
         .header h1 { font-size: 18px; color: #888; font-weight: 600; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .wh-card { background: white; border-radius: 16px; padding: 20px; text-align: center;
@@ -23,23 +20,63 @@
         .wh-card .name { font-size: 16px; font-weight: 600; }
         .logout { position: fixed; top: 16px; right: 16px; font-size: 13px; color: #d00; text-decoration: none;
                   background: white; padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+        .stats-btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px;
+                     background: white; border-radius: 16px; padding: 14px; text-decoration: none; color: #333;
+                     font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+        .stats-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+        .stats-btn i { color: #357ABD; }
+        .flash { padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; font-size: 14px; }
+        .flash.danger { background: #ffe0e0; color: #d00; }
+        .flash.success { background: #e8f5e9; color: #2e7d32; }
+        .search { margin-bottom: 16px; }
+        .search form { display: flex; gap: 8px; }
+        .search input { flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid #ddd;
+                        border-radius: 12px; outline: none; background: white; }
+        .search input:focus { border-color: #4A90D9; }
+        .search button { width: 48px; border: none; border-radius: 12px; background: #4A90D9;
+                         color: white; font-size: 16px; cursor: pointer; }
+        .search button:active { transform: scale(.96); }
     </style>
+<link rel="stylesheet" href="/static/fontawesome/all.min.css">
 </head>
 <body>
-    <a href="{{ url_for('logout') }}" class="logout">Выйти</a>
+    <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-right-from-bracket"></i> {{ current_user.username or "Выйти" }} · Выйти</a>
     <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}{% endif %}
+        {% endwith %}
         <div class="header">
-            <div class="logo">40</div>
+            <img class="logo" src="/static/logo.jpg" alt="40">
             <h1>Выбери склад</h1>
+        </div>
+        <div class="search">
+            <form method="GET" action="{{ url_for('search') }}">
+                <input type="text" name="article" placeholder="Поиск по артикулу на всех складах..." autocomplete="off">
+                <button type="submit" aria-label="Найти"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </form>
+        </div>
+        <div class="search">
+            <form method="GET" action="{{ url_for('search') }}">
+                <input type="text" name="q" placeholder="По названию или бренду..." autocomplete="off">
+                <button type="submit" aria-label="Найти"><i class="fa-solid fa-tag"></i></button>
+            </form>
         </div>
         <div class="grid">
             {% for wh in warehouses %}
-                <a class="wh-card" href="{{ url_for('warehouse_items', wh_id=wh.id) }}">
+                <a class="wh-card" href="{{ url_for('warehouse_categories', wh_id=wh.id) }}">
                     <div class="icon">{{ wh.icon }}</div>
                     <div class="name">{{ wh.name }}</div>
                 </a>
             {% endfor %}
         </div>
+        <a class="stats-btn" href="{{ url_for('stats_all') }}">
+            <i class="fa-solid fa-chart-simple"></i> Статистика
+        </a>
+        {% if is_admin %}
+        <a class="stats-btn" href="{{ url_for('avito_setup') }}">
+            <i class="fa-solid fa-key"></i> Avito API
+        </a>
+        {% endif %}
     </div>
 </body>
 </html>

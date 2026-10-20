@@ -3,78 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Vova40 — Товар #{{ item.id }}</title>
+    <title>Vova40 — {{ item.title or item.brand }} {{ item.category }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-               background: #f5f5f5; color: #333; padding-bottom: 20px; }
-        .header { background: white; padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+               background: #f5f5f5; color: #333; padding-bottom: 30px; }
+
+        /* ── Шапка ── */
+        .header { background: white; padding: 14px 20px; display: flex; align-items: center;
                   border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
-        .header a { text-decoration: none; font-size: 22px; color: #333; }
-        .header h1 { font-size: 18px; font-weight: 700; flex: 1; display: flex; align-items: center; gap: 8px; }
-        .header h1 .logo { display: inline-flex; align-items: center; justify-content: center;
-                           background: linear-gradient(135deg, #4A90D9, #357ABD);
-                           color: white; border-radius: 10px; padding: 2px 8px;
-                           font-size: 14px; font-weight: 800; letter-spacing: 1px; }
-        .content { max-width: 500px; margin: 0 auto; padding: 12px; }
-        .photo-card { background: white; border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
-        .photo-card img { width: 100%; display: block; }
-        .photo-card .no-photo { padding: 40px; text-align: center; color: #aaa; font-size: 40px; }
-        .info-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px;
-                     box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-        .info-card h2 { font-size: 20px; margin-bottom: 12px; }
-        .info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px;
-                    border-bottom: 1px solid #f5f5f5; }
-        .info-row:last-child { border: none; }
-        .info-row .label { color: #888; }
-        .info-row .value { font-weight: 600; text-align: right; }
-        .stage-bar { display: flex; gap: 4px; margin: 12px 0; flex-wrap: wrap; }
-        .stage-dot { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
-                     justify-content: center; font-size: 12px; font-weight: 700; }
-        .stage-dot.done { background: #4A90D9; color: white; }
-        .stage-dot.current { background: #4A90D9; color: white; box-shadow: 0 0 0 3px rgba(74,144,217,.3); }
-        .stage-dot.future { background: #e0e0e0; color: #999; }
-        .stage-labels { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 16px; }
-        .stage-labels span { font-size: 11px; color: #888; padding: 2px 6px; border-radius: 6px; background: #f5f5f5; }
-        .stage-labels span.active { background: #e3f2fd; color: #1565c0; font-weight: 600; }
-        .desc-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px;
-                     box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-        .desc-card h3 { font-size: 14px; color: #888; margin-bottom: 8px; }
-        .desc-card pre { white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.5; }
-        .actions-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-        .actions-card h3 { font-size: 14px; color: #888; margin-bottom: 12px; }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-        .btn { padding: 10px 16px; font-size: 14px; font-weight: 600; border: none; border-radius: 10px;
-               cursor: pointer; text-decoration: none; flex: 1; min-width: 80px; text-align: center; }
+        .header .back { text-decoration: none; font-size: 24px; color: #333; margin-right: 16px; }
+        .header .title { font-size: 13px; color: #888; flex: 1; }
+        .header .edit-btn { background: #0c6; color: white; border: none; padding: 8px 16px;
+                            border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .header .avito-btn { background: #4A90D9; color: white; border: none; padding: 8px 16px;
+                             border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+        .content { max-width: 520px; margin: 0 auto; padding: 0 0 16px; }
+
+        /* ── ГАЛЕРЕЯ ── */
+        .gallery { background: white; position: relative; overflow: hidden; margin-bottom: 0; }
+        .gallery .main-photo { width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover; }
+        .gallery .no-photo { padding: 60px 20px; text-align: center; color: #aaa; font-size: 48px; background: white; }
+        .gallery .nav { position: absolute; top: 50%; transform: translateY(-50%); font-size: 28px;
+                        color: white; text-shadow: 0 1px 4px rgba(0,0,0,.3); cursor: pointer;
+                        padding: 0 12px; user-select: none; z-index: 2; }
+        .gallery .nav.prev { left: 4px; }
+        .gallery .nav.next { right: 4px; }
+        .gallery .dots { display: flex; justify-content: center; gap: 5px; padding: 8px 0; }
+        .gallery .dots span { width: 8px; height: 8px; border-radius: 50%; background: #ddd; cursor: pointer; }
+        .gallery .dots span.active { background: #0c6; }
+
+        /* ── ЦЕНА И НАЗВАНИЕ ── */
+        .price-title { background: white; border-radius: 0 0 12px 12px; padding: 16px 20px; }
+        .price-title .price { font-size: 26px; font-weight: 800; color: #0c6; margin-bottom: 6px; }
+        .price-title .price .old-price { font-size: 16px; color: #aaa; font-weight: 400; text-decoration: line-through; margin-left: 8px; }
+        .price-title h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .price-title .meta { font-size: 13px; color: #888; }
+        .price-title .meta span { margin-right: 8px; }
+
+        /* ── ОПИСАНИЕ ── */
+        .section { background: white; border-radius: 12px; padding: 16px 20px; margin: 10px 16px; }
+        .section h3 { font-size: 13px; color: #888; font-weight: 600; text-transform: uppercase;
+                       letter-spacing: 0.5px; margin-bottom: 10px; }
+        .section p { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+        .section .empty { color: #ccc; font-style: italic; }
+
+        /* ── ХАРАКТЕРИСТИКИ ── */
+        .chars { background: white; border-radius: 12px; padding: 16px 20px; margin: 10px 16px; }
+        .chars h3 { font-size: 13px; color: #888; font-weight: 600; text-transform: uppercase;
+                     letter-spacing: 0.5px; margin-bottom: 10px; }
+        .chars table { width: 100%; border-collapse: collapse; }
+        .chars tr { border-bottom: 1px solid #f0f0f0; }
+        .chars tr:last-child { border: none; }
+        .chars td { padding: 8px 0; font-size: 14px; }
+        .chars td:first-child { color: #888; padding-right: 16px; width: 40%; }
+        .chars td:last-child { font-weight: 600; text-align: right; }
+
+        /* ── КАТЕГОРИЯ ── */
+        .cat-row { background: white; border-radius: 12px; padding: 12px 20px; margin: 10px 16px;
+                   display: flex; align-items: center; gap: 6px; font-size: 14px; color: #888; }
+        .cat-row .cat-name { color: #333; font-weight: 600; }
+
+        /* ── БЛОКИ УПРАВЛЕНИЯ ── */
+        .controls { background: white; border-radius: 12px; padding: 16px 20px; margin: 10px 16px; }
+        .controls h3 { font-size: 13px; color: #888; font-weight: 600; text-transform: uppercase;
+                        letter-spacing: 0.5px; margin-bottom: 10px; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .btn { padding: 10px 16px; font-size: 13px; font-weight: 600; border: none; border-radius: 8px;
+               cursor: pointer; text-decoration: none; flex: 1; min-width: 70px; text-align: center; }
         .btn-stock { background: #e8f5e9; color: #2e7d32; }
         .btn-avito { background: #e3f2fd; color: #1565c0; }
         .btn-sold { background: #fce4ec; color: #c62828; }
+        .btn-work { background: #fff3e0; color: #e65100; }
+        .btn-delivery { background: #ede7f6; color: #4527a0; }
+        .delivery-info { font-size: 13px; color: #4527a0; background: #ede7f6; padding: 8px 12px;
+                         border-radius: 8px; margin-top: 10px; }
         .btn-writeoff { background: #f5f5f5; color: #999; }
-        .btn-primary { background: #4A90D9; color: white; }
-        .btn-sm { font-size: 13px; padding: 8px 12px; }
-        select { padding: 10px 14px; font-size: 14px; border: 2px solid #ddd; border-radius: 10px;
-                 outline: none; width: 100%; margin-bottom: 8px; background: white; }
-        input[type="text"] { width: 100%; padding: 10px 14px; font-size: 14px; border: 2px solid #ddd;
-                             border-radius: 10px; outline: none; }
-        textarea { width: 100%; padding: 10px 14px; font-size: 14px; border: 2px solid #ddd; border-radius: 10px;
-                   outline: none; min-height: 80px; font-family: inherit; }
-        form { margin-bottom: 8px; }
-        .label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 4px; display: block; }
-        .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
+        .btn-primary { background: #0c6; color: white; }
+        .btn.active { outline: 2px solid #0c6; outline-offset: 1px; }
+        .btn-sm { font-size: 12px; padding: 8px 12px; }
+
+        .controls .field { margin-bottom: 10px; }
+        .controls select, .controls input, .controls textarea {
+            width: 100%; padding: 10px 12px; font-size: 14px; border: 2px solid #ddd;
+            border-radius: 8px; outline: none; font-family: inherit; background: white; }
+        .controls textarea { min-height: 70px; resize: vertical; }
+        .controls label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
+        .controls form { margin-bottom: 6px; }
+
+        .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; font-size: 14px;
+                 margin-left: 16px; margin-right: 16px; }
         .flash.success { background: #e8f5e9; color: #2e7d32; }
         .flash.danger { background: #ffe0e0; color: #d00; }
         .flash.warning { background: #fff8e1; color: #f57f17; }
+
         .profit-positive { color: #2e7d32; }
         .profit-negative { color: #c62828; }
-        .avito-link { word-break: break-all; font-size: 13px; }
+        .avito-link { word-break: break-all; font-size: 13px; margin-top: 6px; }
+        .avito-link a { color: #1565c0; text-decoration: underline; }
+        .avito-link-btn { display: inline-flex; align-items: center; gap: 6px; background: #e3f2fd;
+                          color: #1565c0; font-weight: 600; font-size: 13px; padding: 8px 14px;
+                          border-radius: 8px; text-decoration: none; }
+        .avito-link-btn:hover { background: #bbdefb; }
+        .avito-empty-btn { display: inline-flex; align-items: center; gap: 6px;
+                            background: #fff8e1; color: #b26a00; font-weight: 600; font-size: 13px;
+                            padding: 8px 14px; border-radius: 8px; border: 1px dashed #f9a825;
+                            text-decoration: none; }
+        .avito-empty-btn:hover { background: #ffecb3; }
+
+        /* ── Управление фото ── */
+        .photo-upload-area { border: 2px dashed #ddd; border-radius: 12px; padding: 16px;
+                             text-align: center; cursor: pointer; position: relative; margin-bottom: 10px; }
+        .photo-upload-area .icon { font-size: 28px; color: #888; margin-bottom: 4px; }
+        .photo-upload-area .label { font-size: 13px; color: #555; font-weight: 600; }
+        .photo-upload-area input[type="file"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .photo-grid .pw { position: relative; width: 60px; height: 60px; border-radius: 6px; overflow: hidden; }
+        .photo-grid .pw img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #ddd; border-radius: 6px; }
+        .photo-grid .pw.main img { border-color: #0c6; }
+        .photo-grid .pw .del-btn { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px;
+            background: #fff; border-radius: 50%; border: 1px solid #ddd; font-size: 11px; line-height: 18px;
+            text-align: center; color: #999; cursor: pointer; text-decoration: none; }
+        .photo-grid .pw .main-badge { position: absolute; bottom: -2px; left: -2px; font-size: 8px;
+            background: #0c6; color: white; padding: 1px 4px; border-radius: 4px; line-height: 1; }
+
+        /* ── Фото-превью в управлении ── */
+        .photo-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .photo-thumbs .pt { width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
+                            border: 2px solid #ddd; cursor: pointer; position: relative; }
+        .photo-thumbs .pt.main { border-color: #0c6; }
+        .photo-thumbs .pt .set-main { position: absolute; bottom: -18px; left: 0; right: 0;
+                                      font-size: 9px; text-align: center; color: #0c6; cursor: pointer; }
+            .photo-upload-area .upload-btn,
+        .photo-upload-area .submit-btn { 
+            display: block; width: 100%; padding: 12px; margin-top: 6px; 
+            border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; 
+        }
+        .photo-upload-area .upload-btn { background: #0c6; color: white; }
+        .photo-upload-area .submit-btn { background: #07a; color: white; }
+    
+        .tech-block { background: white; border-radius: 12px; padding: 14px; margin: 12px 0; }
+        .tech-block h3 { font-size: 13px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+        .tech-block .tech-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tech-block .tech-thumbs a { display: block; }
+        .tech-block .tech-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid #e0e0e0; }
+
+        /* ── Полноэкранная галерея тех-фото (лайтбокс) ── */
+        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.96); z-index: 100;
+                    display: flex; align-items: center; justify-content: center; }
+        .lightbox .lb-top { position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+                            display: flex; justify-content: space-between; align-items: center;
+                            padding: 14px 16px; color: #fff; }
+        .lightbox .lb-counter { font-size: 14px; opacity: .85; }
+        .lightbox .lb-close { font-size: 30px; line-height: 1; cursor: pointer; padding: 2px 8px;
+                              opacity: .9; }
+        .lightbox .lb-img { max-width: 100%; max-height: 100%; object-fit: contain;
+                            user-select: none; -webkit-user-select: none; }
+        .lightbox .lb-nav { position: absolute; top: 50%; transform: translateY(-50%);
+                            font-size: 44px; color: #fff; opacity: .75; cursor: pointer;
+                            padding: 10px 16px; user-select: none; z-index: 2;
+                            text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+        .lightbox .lb-nav.prev { left: 4px; }
+        .lightbox .lb-nav.next { right: 4px; }
+        .lightbox .lb-zoom-hint { position: absolute; bottom: 18px; left: 0; right: 0; text-align: center;
+                                  color: rgba(255,255,255,.55); font-size: 12px; z-index: 2; }
     </style>
 </head>
 <body>
     <div class="header">
-        <a href="{{ url_for('warehouse_items', wh_id=item.warehouse or 'base') }}">←</a>
-        <h1><span class="logo">40</span> Vova40</h1>
-        <span style="font-size:14px;color:#888;">Товар #{{ item.id }}</span>
+        <a class="back" href="{{ url_for('warehouse_items', wh_id=item.warehouse or 'base') }}">←</a>
+        <span class="title">Объявление #{{ item.id }}</span>
+        {% if is_admin or can_edit %}
+        <div class="header-actions" style="display:flex;gap:8px;align-items:center;">
+            {% if is_admin %}
+            <a href="{{ url_for('export_avito_item', item_id=item.id) }}" title="Выгрузить товар на Авито через API (Автозагрузка)">
+                <button class="avito-btn"><i class="fa-solid fa-upload"></i> Залить на Авито</button>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('edit_item', item_id=item.id) }}">
+                <button class="edit-btn"><i class="fa-solid fa-pen"></i> Правка</button>
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     <div class="content">
@@ -86,125 +198,370 @@
             {% endif %}
         {% endwith %}
 
-        {% if item.photo_file_id and item.photo_file_id.startswith('/') %}
-        <div class="photo-card">
-            <img src="{{ item.photo_file_id }}" alt="Фото товара">
-        </div>
-        {% else %}
-        <div class="photo-card">
-            <div class="no-photo">📸</div>
-        </div>
-        {% endif %}
+        {% set photo_list = (item.photos or '').split(',') if item.photos else [] %}
+        {% set photo_list = photo_list | map('trim') | select | list %}
 
-        <div class="info-card">
-            <h2>{{ item.brand or '?' }} — {{ item.category or '?' }}</h2>
-            <div class="info-row"><span class="label">Размер</span><span class="value">{{ item.size or '?' }}</span></div>
-            <div class="info-row"><span class="label">Состояние</span><span class="value">{{ item.condition or '?' }}</span></div>
-            <div class="info-row"><span class="label">Статус</span><span class="value"><strong>{{ item.status or '?' }}</strong></span></div>
-            <div class="info-row">
-                <span class="label">Этап</span>
-                <span class="value">{{ item.stage or '🛍️ Закупка' }}</span>
-            </div>
-
-            {% set s = item.stage or '🛍️ Закупка' %}
-            {% set idx = [] %}
-            {% for x in stages %}
-                {% if x == s %}{% set _ = idx.append(loop.index0) %}{% endif %}
-            {% endfor %}
-            {% set current_idx = idx[0] if idx else -1 %}
-            <div class="stage-bar">
-                {% for i in range(stages|length) %}
-                    <div class="stage-dot {{ 'done' if i < current_idx else 'current' if i == current_idx else 'future' }}">
-                        {{ i + 1 }}
+        <!-- ГАЛЕРЕЯ ФОТО -->
+        <div class="gallery" id="gallery">
+            {% if photo_list %}
+                <img class="main-photo" id="mainPhoto" src="{{ photo_list[0] }}" alt="Фото товара">
+                {% if photo_list|length > 1 %}
+                    <div class="nav prev" onclick="slideGallery(-1)">‹</div>
+                    <div class="nav next" onclick="slideGallery(1)">›</div>
+                    <div class="dots" id="dots">
+                        {% for ph in photo_list %}
+                            <span class="{{ 'active' if loop.first }}" data-idx="{{ loop.index0 }}" onclick="goToSlide({{ loop.index0 }})"></span>
+                        {% endfor %}
                     </div>
-                {% endfor %}
-            </div>
-            <div class="stage-labels">
-                {% for stg in stages %}
-                    <span class="{{ 'active' if loop.index0 == current_idx else '' }}">{{ stg[:20] }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="info-row">
-                <span class="label">Закупка</span>
-                <span class="value">{{ item.purchase_price|int }} ₽</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Продажа</span>
-                <span class="value">{{ item.sale_price|int }} ₽</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Прибыль</span>
-                <span class="value {{ 'profit-positive' if (item.sale_price|int - item.purchase_price|int) >= 0 else 'profit-negative' }}">
-                    {{ item.sale_price|int - item.purchase_price|int }} ₽
-                </span>
-            </div>
-            <div class="info-row">
-                <span class="label">Добавлен</span>
-                <span class="value">{{ item.created_at or '?' }}</span>
-            </div>
-            {% if item.avito_link %}
-            <div class="info-row">
-                <span class="label">Avito</span>
-                <span class="value avito-link"><a href="{{ item.avito_link }}" target="_blank">{{ item.avito_link[:40] }}...</a></span>
-            </div>
+                {% endif %}
+            {% else %}
+                <div class="no-photo"><i class="fa-solid fa-camera"></i></div>
             {% endif %}
         </div>
 
-        <!-- Описание -->
-        <div class="desc-card">
-            <h3>📝 Описание для Avito</h3>
-            <form method="POST" action="{{ url_for('ai_generate', item_id=item.id) }}">
-                <button class="btn btn-primary btn-sm" style="margin-bottom:8px;width:auto;">🤖 Сгенерировать AI</button>
-            </form>
-            <form method="POST" action="{{ url_for('update_description', item_id=item.id) }}">
-                <textarea name="description">{{ item.description or '' }}</textarea>
-                <button class="btn btn-primary btn-sm" style="width:auto;margin-top:6px;">💾 Сохранить описание</button>
-            </form>
-        </div>
-
-        <!-- Действия -->
-        <div class="actions-card">
-            <h3>📋 Статус</h3>
-            <div class="btn-group">
-                <form method="POST" action="{{ url_for('update_status', item_id=item.id) }}" style="flex:1;">
-                    <input type="hidden" name="status" value="В наличии">
-                    <button class="btn btn-stock">✅ В наличии</button>
-                </form>
-                <form method="POST" action="{{ url_for('update_status', item_id=item.id) }}" style="flex:1;">
-                    <input type="hidden" name="status" value="На Avito">
-                    <button class="btn btn-avito">📢 На Avito</button>
-                </form>
-                <form method="POST" action="{{ url_for('update_status', item_id=item.id) }}" style="flex:1;">
-                    <input type="hidden" name="status" value="Продано">
-                    <button class="btn btn-sold">💸 Продано</button>
-                </form>
+        <!-- ЦЕНА И НАЗВАНИЕ -->
+        <div class="price-title">
+            <div class="price">{{ item.sale_price|int }} ₽</div>
+            <h1>{{ item.title or (item.brand + ' ' + (item.size or ''))|trim or 'Товар #' + item.id|string }}</h1>
+            <div class="meta">
+                <span>{{ item.condition or '' }}</span>
+                <span>{{ item.status or 'В наличии' }}</span>
+                {% if item.size and item.size != 'Не указан' %}
+                    <span>• {{ item.size }}</span>
+                {% endif %}
+                {% if item.brand and item.brand != 'Неизвестный бренд' %}
+                    <span>• {{ item.brand }}</span>
+                {% endif %}
+                <span>• Автор: {{ item.created_by or '—' }}</span>
             </div>
+        </div>
 
-            <h3>🔄 Этап</h3>
-            <form method="POST" action="{{ url_for('update_stage', item_id=item.id) }}">
-                <select name="stage">
-                    {% for st in stages %}
-                        <option value="{{ st }}" {{ 'selected' if st == (item.stage or '🛍️ Закупка') }}>{{ st }}</option>
-                    {% endfor %}
-                </select>
-                <button class="btn btn-primary btn-sm" style="width:auto;">Применить</button>
+        <!-- Категория -->
+        <div class="cat-row">
+            📁 <span class="cat-name">{{ item.category or '?' }}</span>
+            {% if item.subcategory %}
+                <span class="arrow">›</span>
+                <span class="cat-name">{{ item.subcategory }}</span>
+            {% endif %}
+        </div>
+
+        <!-- ОПИСАНИЕ -->
+        <div class="section">
+            <h3>Описание</h3>
+            {% if item.description %}
+                <p>{{ item.description }}</p>
+            {% else %}
+                <div class="empty">Описание не добавлено. Сгенерируйте AI или напишите вручную.</div>
+            {% endif %}
+        </div>
+
+        <!-- ХАРАКТЕРИСТИКИ -->
+        {% set attrs_dict = item.attrs if item.attrs is mapping else {} %}
+        {% if attrs_dict %}
+        <div class="chars">
+            <h3>Характеристики</h3>
+            <table>
+                {% if item.brand and item.brand != 'Неизвестный бренд' %}
+                <tr><td>Бренд</td><td>{{ item.brand }}</td></tr>
+                {% endif %}
+                {% if item.size and item.size != 'Не указан' %}
+                <tr><td>Размер</td><td>{{ item.size }}</td></tr>
+                {% endif %}
+                <tr><td>Состояние</td><td>{{ item.condition }}</td></tr>
+                {% for k, v in attrs_dict.items() %}
+                    <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
+
+        {% if is_admin %}
+<!-- ФИНАНСЫ -->
+        <div class="section">
+            <h3>Финансы</h3>
+            {% set p = item.sale_price|int %}
+            {% set a = (p * avito_comm / 100)|int %}
+            {% set t = (p * tax_pct / 100)|int %}
+            {% set net = p - item.purchase_price|int - a - t %}
+            <table style="width:100%;border-collapse:collapse;">
+                <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:6px 0;color:#888;">Закупка</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.purchase_price|int }} ₽</td></tr>
+                    {% if item.supplier %}<tr><td style="padding:6px 0;color:#888;">Поставщик</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.supplier }}</td></tr>{% endif %}
+                <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:6px 0;color:#888;">Продажа</td>
+                    <td style="padding:6px 0;text-align:right;">{{ p }} ₽</td></tr>
+                <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:6px 0;color:#888;">Комиссия Avito ({{ avito_comm|int }}%)</td>
+                    <td style="padding:6px 0;text-align:right;color:#e65100;">− {{ a }} ₽</td></tr>
+                <tr style="border-bottom:1px solid #f0f0f0;"><td style="padding:6px 0;color:#888;">Налог ({{ tax_pct|int }}%)</td>
+                    <td style="padding:6px 0;text-align:right;color:#e65100;">− {{ t }} ₽</td></tr>
+                <tr><td style="padding:6px 0;color:#888;font-weight:700;">Чистая прибыль</td>
+                    <td style="padding:6px 0;text-align:right;font-weight:800;color:{{ '#2e7d32' if net >= 0 else '#c62828' }};">
+                        {{ net }} ₽</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">ID</td>
+                    <td style="padding:6px 0;text-align:right;font-weight:600;">#{{ item.id }}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;">Добавлен</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.created_at or '?' }}</td></tr>
+            </table>
+        </div>
+
+
+
+        {% endif %}
+{% if is_admin %}
+<!-- УПРАВЛЕНИЕ -->
+        <div class="controls" id="controlsBlock">
+            <form method="POST" action="{{ url_for('update_status', item_id=item.id) }}">
+                <div class="btn-group" id="statusGroup" style="margin-bottom:0;">
+                    <button type="button" class="btn btn-work {{ 'active' if item.status == 'В закупке' }}" data-status="В закупке">
+                        <i class="fa-solid fa-wrench"></i> В закупке
+                    </button>
+                    <button type="button" class="btn btn-stock {{ 'active' if item.status == 'В наличии' }}" data-status="В наличии">
+                        <i class="fa-solid fa-check"></i> В наличии
+                    </button>
+                    <button type="button" class="btn btn-avito {{ 'active' if item.status == 'На Avito' }}" data-status="На Avito">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> На Avito
+                    </button>
+                    <button type="button" class="btn btn-delivery {{ 'active' if item.status == 'В доставке' }}" data-status="В доставке">
+                        <i class="fa-solid fa-truck"></i> В доставке
+                    </button>
+                    <button type="button" class="btn btn-sold {{ 'active' if item.status == 'Продано' }}" data-status="Продано">
+                        <i class="fa-solid fa-circle-check"></i> Продано
+                    </button>
+                </div>
+                <input type="hidden" name="status" id="statusInput" value="">
+                <div id="extraPrice" style="display:none;margin-top:10px;">
+                    <label>Цена продажи (₽)</label>
+                    <input type="number" name="sale_price" value="{{ item.sale_price|int or '' }}" step="1" min="0">
+                </div>
+                <div id="extraLink" style="display:none;margin-top:10px;">
+                    <label>Ссылка на Avito</label>
+                    <input type="text" name="avito_link" value="{{ item.avito_link or '' }}" placeholder="https://avito.ru/...">
+                </div>
+                <button type="submit" id="applyStatusBtn" class="btn btn-primary btn-sm" style="width:auto;margin-top:8px;display:none;">
+                    <i class="fa-solid fa-check"></i> Применить
+                </button>
+            </form>
+
+            <!-- Avito ссылка -->
+            <h3><i class="fa-solid fa-link"></i> Ссылка на Avito</h3>
+            {% set av_link = item.avito_link %}
+            {% if av_link and not (av_link.startswith('http://') or av_link.startswith('https://')) %}
+                {% set av_link = 'https://' ~ av_link %}
+            {% endif %}
+            {% if av_link %}
+                <a class="avito-link-btn" href="{{ av_link }}" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Открыть на Avito
+                </a>
+                <div class="avito-link"><a href="{{ av_link }}" target="_blank" rel="noopener">{{ av_link }}</a></div>
+            {% else %}
+                <a class="avito-empty-btn" href="{{ url_for('edit_item', item_id=item.id) }}">
+                    <i class="fa-solid fa-link"></i> Ссылка не указана — добавить
+                </a>
+            {% endif %}
+
+
+            <!-- Списать -->
+            <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" style="margin-top:8px;"
+                  onsubmit="return confirm('Списать товар {{ item.title or item.brand }}?')">
+                <button class="btn btn-writeoff" style="background:#fce4ec;color:#c62828;width:100%;">
+                    <i class="fa-solid fa-trash-can"></i> Списать товар
+                </button>
+            </form>
+            
+            <form method="POST" action="{{ url_for('really_delete_item', item_id=item.id) }}" style="margin-top:4px;"
+                  onsubmit="return confirm('УДАЛИТЬ товар {{ item.title or item.brand }} из базы навсегда? Восстановление невозможно!')">
+                <button class="btn btn-writeoff" style="background:#ef5350;color:white;width:100%;font-weight:bold;">
+                    <i class="fa-solid fa-circle-minus"></i> Удалить товар навсегда
+                </button>
             </form>
         </div>
 
-        <!-- Avito ссылка -->
-        <div class="actions-card">
-            <h3>🔗 Ссылка Avito</h3>
-            <form method="POST" action="{{ url_for('update_avito', item_id=item.id) }}">
-                <input type="text" name="avito_link" placeholder="https://avito.ru/..." value="{{ item.avito_link or '' }}">
-                <button class="btn btn-primary btn-sm" style="width:auto;margin-top:6px;">💾 Сохранить</button>
-            </form>
-
-            <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" style="margin-top:12px;"
-                  onsubmit="return confirm('Списать товар?')">
-                <button class="btn btn-writeoff" style="background:#fce4ec;color:#c62828;">🗑️ Списать товар</button>
-            </form>
+        {% endif %}
+<!-- ЗАМЕРЫ И КОСЯКИ (внутренние фото) — внизу карточки -->
+        {% set tech_list = (item.tech_photos or '').split(',') if item.tech_photos else [] %}
+        {% set tech_list = tech_list | map('trim') | select | list %}
+        {% if tech_list %}
+        <div class="tech-block">
+            <h3>Замеры и косяки</h3>
+            <div class="tech-thumbs">
+                {% for ph in tech_list %}
+                <a href="{{ ph }}" rel="noopener" title="Открыть галерею" data-index="{{ loop.index0 }}">
+                    <img class="tech-thumb" src="{{ ph }}" alt="Замеры и косяки">
+                </a>
+                {% endfor %}
+            </div>
         </div>
+        {% endif %}
     </div>
+
+        <!-- Полноэкранный просмотр замеров и косяков -->
+        {% if tech_list %}
+        <div class="lightbox" id="techLightbox" style="display:none">
+            <div class="lb-top">
+                <span class="lb-counter" id="lbCounter"></span>
+                <span class="lb-close" id="lbClose">✕</span>
+            </div>
+            <img class="lb-img" id="lbImg" alt="Замеры и косяки">
+            <div class="lb-nav prev" id="lbPrev">‹</div>
+            <div class="lb-nav next" id="lbNext">›</div>
+        </div>
+        {% endif %}
+
+    <script>
+        // Галерея
+        const photoList = [
+            {% for ph in photo_list %}
+                "{{ ph }}",
+            {% endfor %}
+        ];
+        let currentSlide = 0;
+        const mainImg = document.getElementById('mainPhoto');
+
+        function showSlide(idx) {
+            if (!photoList.length) return;
+            currentSlide = (idx + photoList.length) % photoList.length;
+            if (mainImg) mainImg.src = photoList[currentSlide];
+            const dots = document.querySelectorAll('#dots span');
+            dots.forEach(function(d, i) {
+                d.className = i === currentSlide ? 'active' : '';
+            });
+        }
+        function slideGallery(dir) { showSlide(currentSlide + dir); }
+        function goToSlide(idx) { showSlide(idx); }
+
+
+                // ── Перелистывание пальцем (свайп, основная и техгалерея) ──
+        function bindSwipe(el, slideFn) {
+            if (!el) return;
+            var startX = 0, startY = 0, swiping = false;
+            el.addEventListener('touchstart', function (e) {
+                var t = e.changedTouches[0];
+                startX = t.clientX; startY = t.clientY;
+                swiping = true;
+            }, { passive: true });
+            el.addEventListener('touchmove', function (e) {
+                if (!swiping) return;
+                var t = e.changedTouches[0];
+                var dx = t.clientX - startX;
+                var dy = t.clientY - startY;
+                var img = el.querySelector('.main-photo');
+                if (Math.abs(dx) < Math.abs(dy)) {
+                    if (img) img.style.transform = '';
+                    return;
+                }
+                if (img) img.style.transform = 'translateX(' + (dx * 0.4) + 'px)';
+            }, { passive: true });
+            el.addEventListener('touchend', function (e) {
+                if (!swiping) return;
+                swiping = false;
+                var img = el.querySelector('.main-photo');
+                if (img) img.style.transform = '';
+                var t = e.changedTouches[0];
+                var dx = t.clientX - startX;
+                var dy = t.clientY - startY;
+                if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+                slideFn(dx < 0 ? 1 : -1);
+            }, { passive: true });
+        }
+        bindSwipe(document.getElementById('gallery'), function (d) { slideGallery(d); });
+
+        // ── Полноэкранная галерея «Замеры и косяки» (свайп) ──
+        {% if tech_list %}
+        const techList = [
+            {% for ph in tech_list %}
+                "{{ ph }}",
+            {% endfor %}
+        ];
+        const lb = document.getElementById('techLightbox');
+        const lbImg = document.getElementById('lbImg');
+        const lbCounter = document.getElementById('lbCounter');
+        let lbIdx = 0;
+
+        function lbShow(i) {
+            if (!lb || !techList.length) return;
+            lbIdx = (i + techList.length) % techList.length;
+            lbImg.src = techList[lbIdx];
+            lbCounter.textContent = (lbIdx + 1) + ' / ' + techList.length;
+            lb.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function lbHide() {
+            if (!lb) return;
+            lb.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // клик по миниатюре — открыть галерею с этого фото
+        document.querySelectorAll('.tech-thumbs a').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                var idx = parseInt(a.getAttribute('data-index'), 10);
+                if (!isNaN(idx)) lbShow(idx);
+            });
+        });
+
+        // закрытие и навигация
+        document.getElementById('lbClose').addEventListener('click', function (e) {
+            e.stopPropagation(); lbHide();
+        });
+        document.getElementById('lbPrev').addEventListener('click', function (e) {
+            e.stopPropagation(); lbShow(lbIdx - 1);
+        });
+        document.getElementById('lbNext').addEventListener('click', function (e) {
+            e.stopPropagation(); lbShow(lbIdx + 1);
+        });
+        lb.addEventListener('click', function (e) {
+            if (e.target === lb) lbHide();
+        });
+
+        // свайп по изображению
+        let lbStartX = 0, lbStartY = 0, lbSwiping = false;
+        lbImg.addEventListener('touchstart', function (e) {
+            var t = e.changedTouches[0];
+            lbStartX = t.clientX; lbStartY = t.clientY;
+            lbSwiping = true;
+        }, { passive: true });
+        lbImg.addEventListener('touchend', function (e) {
+            if (!lbSwiping) return;
+            lbSwiping = false;
+            var t = e.changedTouches[0];
+            var dx = t.clientX - lbStartX;
+            var dy = t.clientY - lbStartY;
+            if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+            lbShow(lbIdx + (dx < 0 ? 1 : -1));
+        }, { passive: true });
+
+        // клавиатура (для ПК): Esc — закрыть, стрелки — листать
+        document.addEventListener('keydown', function (e) {
+            if (!lb || lb.style.display === 'none') return;
+            if (e.key === 'Escape') lbHide();
+            else if (e.key === 'ArrowLeft') lbShow(lbIdx - 1);
+            else if (e.key === 'ArrowRight') lbShow(lbIdx + 1);
+        });
+        {% endif %}
+
+        // ── Статус: доп. поля при выборе ──
+        (function () {
+            var group = document.getElementById('statusGroup');
+            var statusInput = document.getElementById('statusInput');
+            var extraPrice = document.getElementById('extraPrice');
+            var extraLink = document.getElementById('extraLink');
+            var applyBtn = document.getElementById('applyStatusBtn');
+            if (!group) return;
+            group.addEventListener('click', function (e) {
+                var b = e.target.closest('[data-status]');
+                if (!b) return;
+                group.querySelectorAll('[data-status]').forEach(function (x) {
+                    x.classList.remove('active');
+                });
+                b.classList.add('active');
+                var st = b.getAttribute('data-status');
+                statusInput.value = st;
+                extraPrice.style.display = (st === 'Продано') ? '' : 'none';
+                extraLink.style.display = (st === 'На Avito') ? '' : 'none';
+                applyBtn.style.display = '';
+            });
+        })();
+    </script>
 </body>
 </html>

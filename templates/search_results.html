@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vova40 — Поиск</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+               background: #f5f5f5; padding-bottom: 80px; color: #333; }
+        .header { background: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+                  border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
+        .header a { text-decoration: none; font-size: 22px; color: #333; }
+        .header .title h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .header .title h1 .logo {display:block;width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0}
+        .header .title div { font-size: 13px; color: #888; }
+        .header .links a { text-decoration: none; color: #4A90D9; font-weight: 600; font-size: 15px; }
+
+        .content { max-width: 600px; margin: 0 auto; padding: 12px; }
+        .search { display: flex; gap: 8px; margin-bottom: 12px; }
+        .search input { flex: 1; padding: 10px 14px; font-size: 15px; border: 2px solid #ddd; border-radius: 10px; outline: none; }
+        .search button { padding: 10px 16px; font-size: 15px; border: none; border-radius: 10px; background: #4A90D9; color: white; cursor: pointer; }
+        .export-btn { display: inline-block; padding: 10px 16px; font-size: 14px; border: none; border-radius: 10px; background: #34a853; color: white; cursor: pointer; text-decoration: none; font-weight: 600; }
+
+        .item { background: white; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,.04); display: flex; align-items: center; gap: 12px;
+                cursor: pointer; text-decoration: none; color: inherit; }
+        .item .ph { width: 48px; height: 48px; border-radius: 10px; background: #eee; object-fit: cover; flex-shrink: 0; }
+        .item .info { flex: 1; }
+        .item .info .brand { font-weight: 600; font-size: 15px; }
+        .item .info .meta { font-size: 13px; color: #888; margin-top: 2px; }
+        .item .info .art { font-size: 12px; color: #4A90D9; font-weight: 600; }
+        .item .price { font-weight: 700; font-size: 15px; color: #2e7d32; }
+        .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; display: inline-block; }
+        .badge-stock { background: #e8f5e9; color: #2e7d32; }
+    .badge-work { background: #fff3e0; color: #e65100; }
+    .badge-delivery { background: #ede7f6; color: #4527a0; }
+        .badge-avito { background: #e3f2fd; color: #1565c0; }
+        .badge-sold { background: #fce4ec; color: #c62828; }
+        .empty { text-align: center; padding: 60px 20px; color: #aaa; }
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%;
+               background: #4A90D9; color: white; font-size: 28px; display: flex; align-items: center; justify-content: center;
+               text-decoration: none; box-shadow: 0 4px 12px rgba(74,144,217,.4); }
+        .flash { padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .flash.success { background: #e8f5e9; color: #2e7d32; }
+        .flash.danger { background: #ffe0e0; color: #d00; }
+    </style>
+<link rel="stylesheet" href="/static/fontawesome/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('warehouse_choice') }}">←</a>
+        <div class="title">
+            <h1><img class="logo" src="/static/logo.jpg" alt="40"> Поиск</h1>
+            <div>Найдено: {{ items|length }}{% if article %} · арт: {{ article }}{% elif q %} · «{{ q }}»{% endif %}</div>
+        </div>
+    </div>
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}{% endif %}
+        {% endwith %}
+        <form class="search" method="GET" action="{{ url_for('search') }}">
+            <input type="text" name="article" placeholder="Поиск по артикулу..." value="{{ article }}" autofocus>
+            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Поиск</button>
+        </form>
+        <form class="search" method="GET" action="{{ url_for('search') }}" style="margin-top:8px;">
+            <input type="text" name="q" placeholder="По названию или бренду..." value="{{ q }}">
+            <button type="submit"><i class="fa-solid fa-tag"></i> Поиск</button>
+        </form>
+        {% if items %}
+            {% for item in items %}
+                {% set fp = item.photos.split(",")[0] if item.photos else "" %}
+                <a class="item" href="{{ url_for('item_card', item_id=item.id) }}">
+                    {% if fp %}<img class="ph" src="{{ fp }}">{% else %}<div class="ph" style="display:flex;align-items:center;justify-content:center;font-size:24px;"><i class="fa-solid fa-shirt"></i></div>{% endif %}
+                    <div class="info">
+                        <div class="brand">{{ item.title or item.brand or "?" }}
+                            {% if item.status == "В наличии" %}<span class="badge badge-stock">✓</span>
+                            {% elif item.status == "В закупке" %}<span class="badge badge-work"><i class="fa-solid fa-wrench"></i></span>
+                            {% elif item.status == "На Avito" %}<span class="badge badge-avito">Avito</span>
+                            {% elif item.status == "В доставке" %}<span class="badge badge-delivery"><i class="fa-solid fa-truck"></i></span>
+                            {% elif item.status == "Продано" %}<span class="badge badge-sold"><i class="fa-solid fa-circle-check"></i></span>{% endif %}
+                        </div>
+                        <div class="meta">{{ wh_names.get(item.warehouse, item.warehouse) }} · {{ item.category }} · Размер {{ item.size }}</div>
+                        {% if item.article %}<div class="art">Арт: {{ item.article }}</div>{% endif %}
+                    </div>
+                    <div class="price">{{ item.sale_price|int }} ₽</div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <div><i class="fa-solid fa-box"></i></div>
+                {% if article %}<p>По артикулу «{{ article }}» ничего не найдено</p>{% elif q %}<p>По запросу «{{ q }}» ничего не найдено</p>{% else %}<p>Введи запрос и нажми «Поиск»</p>{% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

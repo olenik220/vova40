@@ -3,62 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Vova40 — Добавить товар</title>
+    <title>Vova40 — Новое объявление</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-               background: #f5f5f5; color: #333; }
-        .header { background: white; padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+               background: #f5f5f5; color: #333; padding-bottom: 30px; }
+
+        /* ── Шапка как в Avito ── */
+        .header { background: white; padding: 14px 20px; display: flex; align-items: center;
                   border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
-        .header a { text-decoration: none; font-size: 22px; color: #333; }
-        .header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .header h1 .logo { display: inline-flex; align-items: center; justify-content: center;
-                           background: linear-gradient(135deg, #4A90D9, #357ABD);
-                           color: white; border-radius: 10px; padding: 2px 8px;
-                           font-size: 14px; font-weight: 800; letter-spacing: 1px; }
-        .content { max-width: 500px; margin: 0 auto; padding: 16px; }
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
-        select, input[type="text"], input[type="number"], input[type="file"] { width: 100%; padding: 10px 14px;
-                font-size: 16px; border: 2px solid #ddd; border-radius: 10px; outline: none; background: white; }
-        select:focus, input:focus { border-color: #4A90D9; }
-        .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-top: 8px;
-                         display: none; }
-        button { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 10px;
-                 background: #4A90D9; color: white; cursor: pointer; margin-top: 8px; }
-        button:hover { background: #357ABD; }
-        .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .header .back { text-decoration: none; font-size: 24px; color: #333; margin-right: 16px; }
+        .header h1 { font-size: 17px; font-weight: 700; flex: 1; }
+        .header .publish-btn { background: #0c6; color: white; border: none; padding: 10px 20px;
+                               border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .header .publish-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .content { max-width: 520px; margin: 0 auto; padding: 16px; }
+
+        /* ── Блок фото как в Avito ── */
+        .photo-block { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .photo-block .photo-area { border: 2px dashed #ddd; border-radius: 12px; padding: 24px;
+                                    text-align: center; cursor: pointer; position: relative; }
+        .photo-block .photo-area:active { background: #f0f9ff; }
+        .photo-block .photo-area .icon { font-size: 40px; color: #888; margin-bottom: 8px; }
+        .photo-block .photo-area .label { font-size: 15px; color: #555; font-weight: 600; }
+        .photo-block .photo-area .sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .photo-block .photo-area input[type="file"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .photo-block .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .photo-block .photo-grid .thumb-wrap { position: relative; width: 70px; height: 70px; }
+        .photo-block .photo-grid .thumb-wrap img { width: 100%; height: 100%; object-fit: cover;
+                                                    border-radius: 6px; border: 2px solid #eee; }
+        .photo-block .photo-grid .thumb-wrap .del {
+            position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: #fff;
+            border-radius: 50%; border: 1px solid #ddd; font-size: 11px; line-height: 18px;
+            text-align: center; color: #999; cursor: pointer; }
+        .photo-block .photo-count { font-size: 13px; color: #888; margin-top: 6px; }
+
+        .photo-block .photo-area .cam-icon { width: 40px; height: 40px; margin-bottom: 8px; }
+        .photo-block .photo-area.drag { border-color: #0c6; background: #f0fff5; }
+        .photo-block .photo-area.drag .label { color: #0c6; }
+        .photo-grid .thumb-wrap.first img { border-color: #0c6; }
+        .thumb-wrap .main-badge { position: absolute; left: 2px; bottom: 2px; background: #0c6; color: #fff;
+                                  font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
+        .thumb-wrap .reorder { position: absolute; top: 2px; left: 2px; background: rgba(0,0,0,.45); color: #fff;
+                               font-size: 9px; padding: 1px 4px; border-radius: 4px; }
+
+        /* Полноэкранный просмотр */
+        .preview-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.93);
+                           z-index: 200; display: none; flex-direction: column; align-items: center;
+                           justify-content: center; padding: 16px; }
+        .preview-overlay img { max-width: 94vw; max-height: 58vh; border-radius: 10px; object-fit: contain;
+                               box-shadow: 0 4px 30px rgba(0,0,0,.5); }
+        .prev-top { position: absolute; top: 12px; left: 0; right: 0; display: flex;
+                    justify-content: space-between; align-items: center; padding: 0 16px; }
+        .prev-pos { color: #fff; font-size: 14px; background: rgba(255,255,255,.18); padding: 5px 14px;
+                    border-radius: 20px; }
+        .prev-close { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(255,255,255,.18);
+                      color: #fff; font-size: 16px; cursor: pointer; }
+        .prev-bottom { position: absolute; bottom: 20px; left: 0; right: 0; display: flex; gap: 8px;
+                       justify-content: center; flex-wrap: wrap; padding: 0 12px; }
+        .prev-btn { border: none; border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 600;
+                    background: rgba(255,255,255,.16); color: #fff; cursor: pointer; min-width: 64px; }
+        .prev-btn.accent { background: #0c6; }
+        .prev-btn.danger { background: #d32f2f; }
+
+        /* ── Поля ── */
+        .form-section { background: white; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+        .form-section h3 { font-size: 13px; color: #888; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+        .field input, .field select, .field textarea {
+            width: 100%; padding: 12px 14px; font-size: 16px; border: 2px solid #ddd;
+            border-radius: 10px; outline: none; background: white; font-family: inherit; }
+        .field textarea { min-height: 100px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: #0c6; }
+        .field .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .field .price-wrap { display: flex; align-items: center; gap: 0; }
+        .field .price-wrap input { flex: 1; border-right: none; border-radius: 10px 0 0 10px; }
+        .field .price-wrap .currency { padding: 12px 14px; font-size: 16px; font-weight: 600;
+                                       color: #555; border: 2px solid #ddd; border-left: none;
+                                       border-radius: 0 10px 10px 0; background: #f8f8f8; }
+
+        /* ── Хлебные крошки категории ── */
+        .cat-breadcrumbs { background: white; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+                           display: flex; align-items: center; gap: 6px; font-size: 14px; color: #888; }
+        .cat-breadcrumbs .cat-name { color: #333; font-weight: 600; }
+        .cat-breadcrumbs .arrow { color: #aaa; }
+
+        /* ── Кнопка ── */
+        .submit-block { margin-top: 16px; }
+        .submit-block button { width: 100%; padding: 16px; font-size: 16px; font-weight: 700;
+                               border: none; border-radius: 10px; background: #0c6; color: white;
+                               cursor: pointer; }
+        .submit-block button:hover { background: #059b50; }
+        .submit-block button:disabled { background: #ccc; cursor: not-allowed; }
+        .submit-block .hint { text-align: center; font-size: 12px; color: #888; margin-top: 8px; }
+
+        /* ── Flash ── */
+        .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+        .flash.success { background: #e8f5e9; color: #2e7d32; }
+        .flash.danger { background: #ffe0e0; color: #d00; }
+    
+        .tech-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tech-grid .tech-thumb { position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; background: #fafafa; }
+        .tech-grid .tech-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tech-grid .tech-del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: rgba(220, 40, 40, .9); color: #fff; border-radius: 50%; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; }
+        .tech-count { font-size: 12px; color: #888; margin-top: 6px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <a href="{{ url_for('index') }}">←</a>
-        <h1><span class="logo">40</span> Vova40</h1>
-        <span style="font-size:14px;color:#888;">Новый товар</span>
+        <a class="back" href="{{ url_for('choose_category', wh_id=wh_id, category=category) }}">←</a>
+        <h1>Новое объявление</h1>
+        <span style="font-size:13px;color:#888;">Vova40</span>
     </div>
+
     <div class="content">
-        <div class="card">
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Категория</label>
-                    <select name="category" required>
-                        {% for c in categories %}
-                            <option value="{{ c }}">{{ c }}</option>
-                        {% endfor %}
-                    </select>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" id="addForm">
+            <input type="hidden" name="category" value="{{ category }}">
+            <input type="hidden" name="subcategory" value="{{ subcategory }}">
+
+            <!-- Хлебные крошки -->
+            <div class="cat-breadcrumbs">
+                <span class="cat-name">{{ category }}</span>
+                <span class="arrow">›</span>
+                <span class="cat-name">{{ subcategory }}</span>
+            </div>
+
+            <!-- ФОТО (как в Avito) -->
+            <div class="photo-block">
+                <div class="photo-area" id="photoArea">
+                    <img src="/static/icons/camera.svg" class="cam-icon" alt="camera">
+                    <div class="label">Добавить фото</div>
+                    <div class="sub">Нажмите или перетащите сюда · до 10 фото</div>
+                    <input type="file" name="photos" accept="image/*" id="photoInput" multiple>
                 </div>
-                <div class="form-group">
-                    <label>Бренд</label>
-                    <input type="text" name="brand" placeholder="Zara, Nike, H&M...">
-                    <div class="hint">Можно пропустить</div>
+                <div class="photo-grid" id="photoGrid"></div>
+                <div class="photo-count" id="photoCount">0 из 10 · первое фото — главное</div>
+            </div>
+
+            <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+            <div class="form-section">
+                <h3>Основная информация</h3>
+
+                <div class="field">
+                    <label>Название товара</label>
+                    <input type="text" name="title" placeholder="Например: Nike футболка хлопковая" maxlength="100">
+                    <div class="hint">Будет заголовком объявления на Avito</div>
                 </div>
-                <div class="form-group">
-                    <label>Размер</label>
-                    <input type="text" name="size" placeholder="M, 42, L...">
-                    <div class="hint">Можно пропустить</div>
+
+                <div class="field">
+                    <label>Описание</label>
+                    <textarea name="description" placeholder="Опишите товар: состояние, особенности, размер..." maxlength="3000"></textarea>
                 </div>
-                <div class="form-group">
+
+                <div class="field">
+                    <label>Цена</label>
+                    <div class="price-wrap">
+                        <input type="number" name="sale_price" step="1" min="0" placeholder="1500" required>
+                        <span class="currency">₽</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ХАРАКТЕРИСТИКИ -->
+            <div class="form-section">
+                <h3>Характеристики</h3>
+
+                <div class="field">
                     <label>Состояние</label>
                     <select name="condition">
                         {% for c in conditions %}
@@ -66,32 +188,314 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="form-group">
+
+                <div class="field">
+                    <label>Бренд</label>
+                    <input type="text" name="brand" placeholder="Zara, Nike, H&M...">
+                    <div class="hint">Можно пропустить</div>
+                </div>
+
+                <div class="field">
+                    <label>Размер (RU)</label>
+                    <input type="text" name="size" placeholder="M, 42, L...">
+                    <div class="hint">Можно пропустить</div>
+                </div>
+
+                <!-- Динамические атрибуты категории -->
+                {% for aname in attrs %}
+                    {% if aname not in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)') %}
+                    <div class="field">
+                        <label>{{ aname }}</label>
+                        <input type="text" name="av_{{ loop.index0 }}" placeholder="{{ aname }}">
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if is_admin %}
+<!-- Цена закупки (скрыта, но нужна для учёта) -->
+            <div class="form-section">
+                <h3>Учёт</h3>
+                <div class="field">
                     <label>Цена закупки (₽)</label>
-                    <input type="number" name="purchase_price" step="1" min="0" placeholder="500">
+                    <div class="price-wrap">
+                        <input type="number" name="purchase_price" step="1" min="0" placeholder="500">
+                        <span class="currency">₽</span>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Цена продажи (₽)</label>
-                    <input type="number" name="sale_price" step="1" min="0" placeholder="1500" required>
+                <div class="field">
+                    <label>Поставщик</label>
+                    <select name="supplier" id="supplierSelect" onchange="supplierChanged()">
+                        <option value="">Не выбран</option>
+                        <option value="Кирилл">Кирилл</option>
+                        <option value="Совместно">Совместно</option>
+                        <option value="Брат">Брат</option>
+                        <option value="Другое">Другое...</option>
+                    </select>
+                    <input type="text" name="supplier_custom" id="supplierCustom" placeholder="Укажите поставщика" maxlength="200" style="display:none;margin-top:8px;">
                 </div>
-                <div class="form-group">
-                    <label>Фото</label>
-                    <input type="file" name="photo" accept="image/*" id="photoInput">
-                    <img id="preview" class="photo-preview">
-                    <div class="hint">Необязательно</div>
+            </div>
+
+            {% endif %}
+<!-- Примечание -->
+            <div class="form-section">
+                <h3>Примечание</h3>
+                <div class="field">
+                    <textarea name="note" placeholder="Внутренние заметки: размеры, договорённости, что проверить..." maxlength="1000"></textarea>
                 </div>
-                <button type="submit">💾 Сохранить товар</button>
-            </form>
+            </div>
+
+            <!-- Замеры и косяки (внутренние фото, на Avito не попадут) -->
+            <div class="form-section">
+                <h3>Замеры и косяки</h3>
+                <div class="field">
+                    <input type="file" name="tech_photos" id="techPhotoInput" accept="image/*" multiple>
+                    <div class="hint">Внутренние фото: замеры рулеткой, дефекты, повреждения. На Avito не попадают.</div>
+                    <div class="tech-grid" id="techGrid"></div>
+                    <div class="tech-count" id="techCount">0 из 10</div>
+                </div>
+            </div>
+
+            <!-- Кнопка -->
+            <div class="submit-block">
+                <button type="submit" id="submitBtn">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Опубликовать
+                </button>
+                <div class="hint">Товар появится на складе</div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Полноэкранный просмотр фото -->
+    <div class="preview-overlay" id="previewOverlay">
+        <div class="prev-top">
+            <span class="prev-pos" id="prevPos">1 из 1</span>
+            <button type="button" class="prev-close" id="prevClose">✕</button>
+        </div>
+        <img id="prevImg" alt="Просмотр фото">
+        <div class="prev-bottom">
+            <button type="button" class="prev-btn" id="prevLeft">←</button>
+            <button type="button" class="prev-btn accent" id="prevMain">★ Главное</button>
+            <button type="button" class="prev-btn" id="prevRight">→</button>
+            <button type="button" class="prev-btn danger" id="prevDelete">Удалить</button>
         </div>
     </div>
+
     <script>
-        document.getElementById('photoInput').onchange = function(e) {
-            const img = document.getElementById('preview');
-            if (e.target.files && e.target.files[0]) {
-                img.src = URL.createObjectURL(e.target.files[0]);
-                img.style.display = 'block';
+        const input = document.getElementById('photoInput');
+        const area = document.getElementById('photoArea');
+        const grid = document.getElementById('photoGrid');
+        const count = document.getElementById('photoCount');
+        const overlay = document.getElementById('previewOverlay');
+        const prevImg = document.getElementById('prevImg');
+        const prevPos = document.getElementById('prevPos');
+        const MAX = 10, MAX_SIZE = 25 * 1024 * 1024; // 25 МБ на файл
+        let selectedFiles = [];
+        let curIdx = 0;
+        let dragFrom = null;
+        const urlMap = new Map(); // file -> objectURL
+
+        function urlOf(f) {
+            if (!urlMap.has(f)) urlMap.set(f, URL.createObjectURL(f));
+            return urlMap.get(f);
+        }
+        function dropUrl(f) {
+            if (urlMap.has(f)) { URL.revokeObjectURL(urlMap.get(f)); urlMap.delete(f); }
+        }
+
+        // Добавление файлов с валидацией
+        function addFiles(fileList) {
+            const arr = Array.from(fileList);
+            const warns = [];
+            for (const f of arr) {
+                if (selectedFiles.length >= MAX) { warns.push('Можно не больше ' + MAX + ' фото'); break; }
+                if (!f.type || !f.type.startsWith('image/')) { warns.push('«' + f.name + '» — не картинка, пропущено'); continue; }
+                if (f.size > MAX_SIZE) { warns.push('«' + f.name + '» больше 25 МБ, пропущено'); continue; }
+                if (selectedFiles.some(function(x){ return x.name === f.name && x.size === f.size; })) { warns.push('«' + f.name + '» уже добавлено'); continue; }
+                selectedFiles.push(f);
             }
+            if (warns.length) alert(warns.join('\n'));
+            renderThumbs();
+            syncInput();
+        }
+        input.onchange = function(e) { addFiles(e.target.files); };
+
+        // Drag & drop файлов на область
+        ['dragover', 'dragenter'].forEach(function(ev) {
+            area.addEventListener(ev, function(e) { e.preventDefault(); area.classList.add('drag'); });
+        });
+        ['dragleave', 'drop'].forEach(function(ev) {
+            area.addEventListener(ev, function(e) { e.preventDefault(); area.classList.remove('drag'); });
+        });
+        area.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+        });
+        // Чтобы браузер не открывал файл, если перетащили мимо области
+        document.addEventListener('dragover', function(e) { e.preventDefault(); });
+        document.addEventListener('drop', function(e) { e.preventDefault(); });
+
+        // Перед отправкой формы — синхронизировать файлы (фото = выбранный набор)
+        document.getElementById('addForm').addEventListener('submit', function() {
+            syncInput();
+        });
+
+        // Сохранение порядка файлов в input (DataTransfer)
+        function syncInput() {
+            try {
+                const dt = new DataTransfer();
+                selectedFiles.forEach(function(f) { dt.items.add(f); });
+                input.files = dt.files;
+            } catch (err) { /* старый браузер — порядок не критичен */ }
+        }
+
+        // Отрисовка превью
+        function renderThumbs() {
+            grid.innerHTML = '';
+            selectedFiles.forEach(function(file, idx) {
+                const wrap = document.createElement('div');
+                wrap.className = 'thumb-wrap' + (idx === 0 ? ' first' : '');
+                wrap.draggable = true;
+                wrap.title = 'Клик — просмотр, перетащите — изменить порядок';
+
+                const img = document.createElement('img');
+                img.src = urlOf(file);
+                img.draggable = false;
+
+                const main = document.createElement('div');
+                main.className = 'main-badge';
+                main.textContent = '★ 1';
+                main.style.display = idx === 0 ? 'block' : 'none';
+
+                const del = document.createElement('div');
+                del.className = 'del';
+                del.textContent = '×';
+                del.onclick = function(e) { e.stopPropagation(); removeAt(idx); };
+
+                wrap.appendChild(img);
+                wrap.appendChild(main);
+                wrap.appendChild(del);
+                wrap.onclick = function() { openPreview(idx); };
+                wireDrag(wrap, idx);
+                grid.appendChild(wrap);
+            });
+            count.textContent = selectedFiles.length + ' из 10' + (selectedFiles.length ? ' · первое фото — главное' : '');
+        }
+
+        function removeAt(idx) {
+            dropUrl(selectedFiles[idx]);
+            selectedFiles.splice(idx, 1);
+            if (!selectedFiles.length) closePreview();
+            renderThumbs();
+            syncInput();
+        }
+
+        // Перетаскивание превью (смена порядка)
+        function wireDrag(wrap, idx) {
+            wrap.addEventListener('dragstart', function(e) {
+                dragFrom = idx;
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            wrap.addEventListener('dragover', function(e) { e.preventDefault(); });
+            wrap.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (dragFrom === null || dragFrom === idx) return;
+                const moved = selectedFiles.splice(dragFrom, 1)[0];
+                selectedFiles.splice(idx, 0, moved);
+                dragFrom = null;
+                renderThumbs();
+                syncInput();
+            });
+            wrap.addEventListener('dragend', function() { dragFrom = null; });
+        }
+
+        // Полноэкранный просмотр
+        function openPreview(idx) {
+            curIdx = idx;
+            prevImg.src = urlOf(selectedFiles[idx]);
+            prevPos.textContent = (idx + 1) + ' из ' + selectedFiles.length;
+            overlay.style.display = 'flex';
+        }
+        function closePreview() {
+            overlay.style.display = 'none';
+            prevImg.src = '';
+        }
+        document.getElementById('prevClose').onclick = closePreview;
+        overlay.onclick = function(e) { if (e.target === overlay) closePreview(); };
+        document.getElementById('prevLeft').onclick = function() {
+            if (!selectedFiles.length) return;
+            curIdx = (curIdx - 1 + selectedFiles.length) % selectedFiles.length;
+            openPreview(curIdx);
         };
+        document.getElementById('prevRight').onclick = function() {
+            if (!selectedFiles.length) return;
+            curIdx = (curIdx + 1) % selectedFiles.length;
+            openPreview(curIdx);
+        };
+        document.getElementById('prevMain').onclick = function() {
+            if (curIdx === 0) return;
+            const moved = selectedFiles.splice(curIdx, 1)[0];
+            selectedFiles.unshift(moved);
+            renderThumbs(); syncInput();
+            openPreview(0);
+        };
+        document.getElementById('prevDelete').onclick = function() { removeAt(curIdx); };
+    </script>
+    <script>
+        // ── Техгалерея «Замеры и косяки» ──
+        (function () {
+            var input = document.getElementById('techPhotoInput');
+            var grid = document.getElementById('techGrid');
+            var count = document.getElementById('techCount');
+            if (!input || !grid) return;
+            var files = [];
+            var urlMap = new Map();
+            function render() {
+                grid.innerHTML = '';
+                files.forEach(function (f, idx) {
+                    var wrap = document.createElement('div');
+                    wrap.className = 'tech-thumb';
+                    var img = document.createElement('img');
+                    if (!urlMap.has(f)) urlMap.set(f, URL.createObjectURL(f));
+                    img.src = urlMap.get(f);
+                    var del = document.createElement('div');
+                    del.className = 'tech-del';
+                    del.textContent = '×';
+                    del.onclick = (function (i) {
+                        return function (e) {
+                            e.stopPropagation();
+                            files.splice(i, 1);
+                            render();
+                        };
+                    })(idx);
+                    wrap.appendChild(img);
+                    wrap.appendChild(del);
+                    grid.appendChild(wrap);
+                });
+                count.textContent = files.length + ' из 10';
+                try {
+                    var dt = new DataTransfer();
+                    files.forEach(function (f) { dt.items.add(f); });
+                    input.files = dt.files;
+                } catch (err) {}
+            }
+            input.addEventListener('change', function () {
+                for (var i = 0; i < input.files.length; i++) {
+                    if (files.length >= 10) break;
+                    files.push(input.files[i]);
+                }
+                render();
+            });
+        })();
+    </script>
+
+    <script>
+        function supplierChanged() {
+            var sel = document.getElementById('supplierSelect');
+            var cust = document.getElementById('supplierCustom');
+            if (sel.value === 'Другое') { cust.style.display = 'block'; cust.focus(); }
+            else { cust.style.display = 'none'; cust.value = ''; }
+        }
     </script>
 </body>
 </html>

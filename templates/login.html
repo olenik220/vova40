@@ -26,6 +26,7 @@
         .flash { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
         .flash.danger { background: #ffe0e0; color: #d00; }
     </style>
+<link rel="stylesheet" href="/static/fontawesome/all.min.css">
 </head>
 <body>
     <div class="login-card">
@@ -40,9 +41,14 @@
             {% endif %}
         {% endwith %}
         <form method="POST">
-            <input type="password" name="password" placeholder="Пароль" autofocus required>
-            <button type="submit">Войти</button>
+            <input type="text" name="username" placeholder="Имя (пусто — администратор)" autocomplete="username" style="width:100%;padding:12px 16px;font-size:16px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;">
+            <input type="password" name="password" placeholder="Пароль" autofocus required style="width:100%;padding:12px 16px;font-size:16px;border:2px solid #ddd;border-radius:10px;outline:none;">
+            <button type="submit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Войти</button>
         </form>
+        <div style="margin-top:16px;font-size:12px;color:#aaa;line-height:1.5;">
+            Администратор: имя пустое или «admin» + пароль.<br>
+            Сотрудник Max: имя «Max», пароль max13.
+        </div>
     </div>
 </body>
 </html>

@@ -56,24 +56,32 @@ class DescriptionGenerator:
 
     def generate_description(
         self,
-        image_bytes: Optional[bytes],
+        image_bytes: Optional[list[bytes]],
         category: str,
         brand: str,
         size: str,
         condition: str,
         purchase_price: float,
         sale_price: float,
+        title: str = "",
+        supplier: str = "",
+        attrs: Optional[object] = None,
+        article: str = "",
     ) -> str:
-        """Генерирует описание товара."""
+        """Генерирует описание товара. image_bytes — список байт всех фото товара.
+        title/supplier/attrs/article — дополнительные данные, обогащающие промпт."""
         provider = self._get_provider()
         try:
-            return provider.generate(image_bytes, category, brand, size,
-                                     condition, purchase_price, sale_price)
+            return provider.generate(
+                image_bytes=image_bytes, category=category, brand=brand, size=size,
+                condition=condition, purchase_price=purchase_price, sale_price=sale_price,
+                title=title, supplier=supplier, attrs=attrs, article=article)
         except Exception as e:
             logger.error(f"Ошибка AI провайдера: {e}")
-            return _TemplateProvider().generate(image_bytes, category, brand,
-                                                 size, condition,
-                                                 purchase_price, sale_price)
+            return _TemplateProvider().generate(
+                image_bytes=image_bytes, category=category, brand=brand, size=size,
+                condition=condition, purchase_price=purchase_price, sale_price=sale_price,
+                title=title, supplier=supplier, attrs=attrs, article=article)
 
     def improve_description(self, current_description: str) -> str:
         """Улучшает существующее описание (если есть AI)."""
@@ -90,16 +98,60 @@ class DescriptionGenerator:
 class _TemplateProvider:
     """Шаблонный генератор — не требует никаких ключей."""
 
-    def generate(self, image_bytes, category, brand, size,
-                 condition, purchase_price, sale_price):
+    def generate(self, images_bytes, category, brand, size,
+                 condition, purchase_price, sale_price,
+                 title="", supplier="", attrs=None, article=""):
+        photo_hints = []
+        if images_bytes:
+            for ib in images_bytes:
+                try:
+                    import image_analysis as ian
+                    ih = ian.describe(ib)
+                    if ih:
+                        photo_hints.append(ih)
+                except Exception:
+                    pass
+        photo_hint = ""
+        if photo_hints:
+            if len(photo_hints) == 1:
+                photo_hint = "\nПо фото: " + photo_hints[0]
+            else:
+                unique = []
+                seen = set()
+                for h in photo_hints:
+                    if h not in seen:
+                        unique.append(h); seen.add(h)
+                photo_hint = "\nПо фото: " + " | ".join(unique)
+        # Парсим attrs для материала/состава
+        material = ""
+        if attrs:
+            ad = {}
+            if isinstance(attrs, dict):
+                ad = attrs
+            elif isinstance(attrs, str):
+                try:
+                    import json
+                    ad = json.loads(attrs)
+                except Exception:
+                    pass
+            material = ad.get('Материал') or ad.get('Состав') or ad.get('material') or ad.get('material', '')
+        # Заголовок
+        title_part = title.strip() if title.strip() else f"{brand} — {category}".strip(" —")
+        header = f"📌 {title_part}\n\n"
+        # Блок размера и материала
+        size_block = f"📏 Размер: {size}\n" if size else ""
+        material_block = f"🧵 Состав: {material}\n" if material else ""
         return (
-            f"📌 {brand} — {category}\n\n"
-            f"Продаю {category.lower()} бренда {brand}, "
-            f"размер {size}. Состояние: {condition.lower()}.\n"
-            f"Оригинальная вещь из секонд-хенда.\n\n"
-            f"📏 Размер: {size}\n"
+            header +
+            f"Продаю {category.lower()} бренда {brand}" +
+            (f", размер {size}" if size else "") +
+            f". Состояние: {condition.lower()}.{photo_hint}\n\n"
+            f"{size_block}"
+            f"{material_block}"
             f"📊 Состояние: {condition}\n"
             f"💰 Цена: {sale_price:.0f} ₽\n\n"
+            f"Оригинал, как и все в профиле.\n\n"
+            f"! перед оформлением Авито-доставкой свяжитесь в сообщениях !\n\n"
             f"#секондхенд #{brand.lower().replace(' ', '')} "
             f"#{category.lower().replace(' ', '')} #avito"
         )

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vova40 — Редактировать #{{ item.id }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+               background: #f5f5f5; color: #333; padding-bottom: 30px; }
+
+        .header { background: white; padding: 14px 20px; display: flex; align-items: center;
+                  border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
+        .header .back { text-decoration: none; font-size: 24px; color: #333; margin-right: 16px; }
+        .header h1 { font-size: 17px; font-weight: 700; flex: 1; }
+        .header .save-btn { background: #0c6; color: white; border: none; padding: 10px 20px;
+                            border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+        .content { max-width: 520px; margin: 0 auto; padding: 16px; }
+
+        .cat-breadcrumbs { background: white; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+                           display: flex; align-items: center; gap: 6px; font-size: 14px; color: #888; }
+        .cat-breadcrumbs .cat-name { color: #333; font-weight: 600; }
+
+        .photo-block { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .photo-block .section-title { font-size: 13px; color: #888; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .photo-block .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .photo-block .photo-grid .thumb-wrap { position: relative; width: 72px; height: 72px; }
+        .photo-block .photo-grid .thumb-wrap img { width: 100%; height: 100%; object-fit: cover;
+                                                   border-radius: 6px; border: 2px solid #eee; }
+        .photo-block .photo-grid .thumb-wrap.first img { border-color: #0c6; }
+        .photo-block .photo-grid .thumb-wrap .del {
+            position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: #fff;
+            border-radius: 50%; border: 1px solid #ddd; font-size: 11px; line-height: 18px;
+            text-align: center; color: #999; cursor: pointer; }
+        .thumb-wrap .main-badge { position: absolute; left: 2px; bottom: 2px; background: #0c6; color: #fff;
+                                  font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
+        .photo-block .photo-count { font-size: 13px; color: #888; margin-top: 6px; }
+        .photo-block .photo-area { border: 2px dashed #ddd; border-radius: 12px; padding: 20px;
+                                   text-align: center; cursor: pointer; position: relative; margin-top: 10px; }
+        .photo-block .photo-area .cam-icon { width: 36px; height: 36px; margin-bottom: 6px; }
+        .photo-block .photo-area .label { font-size: 15px; color: #555; font-weight: 600; }
+        .photo-block .photo-area .sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .photo-block .photo-area.drag { border-color: #0c6; background: #f0fff5; }
+        .photo-block .photo-area.drag .label { color: #0c6; }
+        .photo-block .photo-area input[type="file"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+        /* Полноэкранный просмотр */
+        .preview-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.93);
+                           z-index: 200; display: none; flex-direction: column; align-items: center;
+                           justify-content: center; padding: 16px; }
+        .preview-overlay img { max-width: 94vw; max-height: 58vh; border-radius: 10px; object-fit: contain;
+                               box-shadow: 0 4px 30px rgba(0,0,0,.5); }
+        .prev-top { position: absolute; top: 12px; left: 0; right: 0; display: flex;
+                    justify-content: space-between; align-items: center; padding: 0 16px; }
+        .prev-pos { color: #fff; font-size: 14px; background: rgba(255,255,255,.18); padding: 5px 14px;
+                    border-radius: 20px; }
+        .prev-close { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(255,255,255,.18);
+                      color: #fff; font-size: 16px; cursor: pointer; }
+        .prev-bottom { position: absolute; bottom: 20px; left: 0; right: 0; display: flex; gap: 8px;
+                       justify-content: center; flex-wrap: wrap; padding: 0 12px; }
+        .prev-btn { border: none; border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 600;
+                    background: rgba(255,255,255,.16); color: #fff; cursor: pointer; min-width: 64px; }
+        .prev-btn.accent { background: #0c6; }
+        .prev-btn.danger { background: #d32f2f; }
+
+        .form-section { background: white; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+        .form-section h3 { font-size: 13px; color: #888; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+        .field input, .field select, .field textarea {
+            width: 100%; padding: 12px 14px; font-size: 16px; border: 2px solid #ddd;
+            border-radius: 10px; outline: none; background: white; font-family: inherit; }
+        .field textarea { min-height: 100px; resize: vertical; }
+        .field input:focus, .field select:focus, .field textarea:focus { border-color: #0c6; }
+        .field .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .field .price-wrap { display: flex; align-items: center; }
+        .field .price-wrap input { flex: 1; border-radius: 10px 0 0 10px; }
+        .field .price-wrap .currency { padding: 12px 14px; font-size: 16px; font-weight: 600;
+                                       color: #555; border: 2px solid #ddd; border-left: none;
+                                       border-radius: 0 10px 10px 0; background: #f8f8f8; }
+
+        .submit-block { margin-top: 16px; }
+        .submit-block button { width: 100%; padding: 16px; font-size: 16px; font-weight: 700;
+                               border: none; border-radius: 10px; background: #0c6; color: white;
+                               cursor: pointer; }
+        .submit-block button:hover { background: #059b50; }
+
+        .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+        .flash.success { background: #e8f5e9; color: #2e7d32; }
+        .flash.danger { background: #ffe0e0; color: #d00; }
+
+        .delete-link { display: block; text-align: center; margin-top: 16px; padding: 14px; }
+        .delete-link a { color: #2e7d32; font-size: 14px; text-decoration: none; }
+
+        .inline-form { display: inline; }
+    
+        .tech-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tech-grid .tech-thumb { position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; background: #fafafa; }
+        .tech-grid .tech-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tech-grid .tech-del { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: rgba(220, 40, 40, .9); color: #fff; border-radius: 50%; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; }
+        .tech-count { font-size: 12px; color: #888; margin-top: 6px; }
+    </style>
+</head>
+<body>
+    <form method="POST" enctype="multipart/form-data" id="editForm">
+    <div class="header">
+        <a class="back" href="{{ url_for('item_card', item_id=item.id) }}">←</a>
+        <h1>Редактировать #{{ item.id }}</h1>
+        <button class="save-btn" type="submit">Сохранить</button>
+    </div>
+
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for cat, msg in messages %}
+                    <div class="flash {{ cat }}">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+            <div class="cat-breadcrumbs">
+                <span class="cat-name">{{ item.category }}</span>
+                {% if item.subcategory %}
+                <span class="arrow">›</span>
+                <span class="cat-name">{{ item.subcategory }}</span>
+                {% endif %}
+            </div>
+
+            <!-- ФОТО -->
+            <div class="photo-block">
+                <div class="section-title">Фотографии</div>
+                {% set photo_list = (item.photos or '').split(',') if item.photos else [] %}
+                {% set photo_list = photo_list | map('trim') | select | list %}
+                <input type="hidden" name="photo_order" id="photoOrderInput">
+                <div class="photo-grid" id="photoGrid"></div>
+                <div class="photo-count" id="photoCount">0 из 10 · первое фото — главное</div>
+                <div class="photo-area" id="photoArea">
+                    <img src="/static/icons/camera.svg" class="cam-icon" alt="camera">
+                    <div class="label">Добавить фото</div>
+                    <div class="sub">Нажмите или перетащите сюда · до 10 фото</div>
+                    <input type="file" name="photos" accept="image/*" id="photoInput" multiple>
+                </div>
+            </div>
+
+            <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+            <div class="form-section">
+                <h3>Основная информация</h3>
+
+                <div class="field">
+                    <label>Название товара</label>
+                    <input type="text" name="title" value="{{ item.title or '' }}" placeholder="Например: Nike футболка хлопковая" maxlength="100">
+                </div>
+
+                <div class="field">
+                    <label>Описание</label>
+                    <textarea name="description" placeholder="Опишите товар..." maxlength="3000">{{ item.description or '' }}</textarea>
+                        <button type="submit" formaction="{{ url_for('ai_generate', item_id=item.id) }}" class="btn btn-primary btn-sm" style="margin-top:6px;">Сгенерировать AI</button>
+
+                </div>
+
+                <div class="field">
+                    <label>Цена продажи</label>
+                    <div class="price-wrap">
+                        <input type="number" name="sale_price" value="{{ item.sale_price|int }}" step="1" min="0" required>
+                        <span class="currency">₽</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ХАРАКТЕРИСТИКИ -->
+            <div class="form-section">
+                <h3>Характеристики</h3>
+
+                <div class="field">
+                    <label>Категория</label>
+                    <select name="category" id="catSelect" onchange="updateSubs()">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {{ 'selected' if item.category == cat }}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Подкатегория</label>
+                    <select name="subcategory" id="subSelect">
+                    <option value="">— без подкатегории —</option>
+                    {% set subs = avito_cats.get(item.category, {}).get('subcategories', []) %}
+                    {% for s in subs %}
+                    <option value="{{ s }}" {{ 'selected' if item.subcategory == s }}>{{ s }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Состояние</label>
+                    <select name="condition">
+                        {% for c in conditions %}
+                        <option value="{{ c }}" {{ 'selected' if item.condition == c }}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Бренд</label>
+                    <input type="text" name="brand" value="{{ item.brand or '' }}" placeholder="Zara, Nike, H&amp;M...">
+                </div>
+
+                <div class="field">
+                    <label>Размер (RU)</label>
+                    <input type="text" name="size" value="{{ item.size or '' }}" placeholder="M, 42, L...">
+                </div>
+
+                <div class="field">
+                    <label>Артикул</label>
+                    <input type="text" name="article" value="{{ item.article or '' }}" placeholder="Артикул">
+                </div>
+
+                <!-- Динамические атрибуты категории -->
+                {% set cat_info = avito_cats.get(item.category) %}
+                {% if cat_info %}
+                {% set ns = namespace(idx=0) %}
+                {% for aname in cat_info['attrs'] %}
+                    {% if aname not in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)') %}
+                    {% set attr_val = attrs_dict.get(aname, '') %}
+                    <div class="field">
+                        <label>{{ aname }}</label>
+                        <input type="text" name="av_{{ ns.idx }}" value="{{ attr_val }}" placeholder="{{ aname }}">
+                    </div>
+                    {% set ns.idx = ns.idx + 1 %}
+                    {% endif %}
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Склад и учёт -->
+            <div class="form-section">
+                <h3>Склад и учёт</h3>
+
+                <div class="field">
+                    <label>Склад</label>
+                    <select name="warehouse">
+                        {% for wh in warehouses %}
+                        <option value="{{ wh.id }}" {{ 'selected' if item.warehouse == wh.id }}>{{ wh.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if is_admin %}
+                <div class="field">
+                    <label>Цена закупки (₽)</label>
+                    <div class="price-wrap">
+                        <input type="number" name="purchase_price" value="{{ item.purchase_price|int }}" step="1" min="0">
+                        <span class="currency">₽</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Поставщик</label>
+                    <select name="supplier" id="supplierSelect" onchange="supplierChanged()">
+                        <option value="">Не выбран</option>
+                        <option value="Кирилл"{% if item.supplier == 'Кирилл' %} selected{% endif %}>Кирилл</option>
+                        <option value="Совместно"{% if item.supplier == 'Совместно' %} selected{% endif %}>Совместно</option>
+                        <option value="Брат"{% if item.supplier == 'Брат' %} selected{% endif %}>Брат</option>
+                        <option value="Другое"{% if item.supplier and item.supplier not in ('Кирилл','Совместно','Брат') %} selected{% endif %}>Другое...</option>
+                    </select>
+                    <input type="text" name="supplier_custom" id="supplierCustom" placeholder="Укажите поставщика" maxlength="200"
+                           style="display:{% if item.supplier and item.supplier not in ('Кирилл','Совместно','Брат') %}block{% else %}none{% endif %};margin-top:8px;"
+                           value="{% if item.supplier and item.supplier not in ('Кирилл','Совместно','Брат') %}{{ item.supplier }}{% endif %}">
+                </div>
+                {% endif %}
+
+                <div class="field">
+                    <label>Ссылка на Avito</label>
+                    <input type="text" name="avito_link" value="{{ item.avito_link or '' }}" placeholder="https://avito.ru/...">
+                </div>
+
+                <div class="field">
+                    <label>Примечание</label>
+                    <textarea name="note" placeholder="Примечание..." maxlength="1000">{{ item.note or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Замеры и косяки (внутренние фото, на Avito не попадут) -->
+            <div class="form-section">
+                <h3>Замеры и косяки</h3>
+                <div class="field">
+                    <input type="file" name="tech_photos" id="techPhotoInput" accept="image/*" multiple>
+                    <input type="hidden" name="tech_order" id="techOrderInput" value="[]">
+                    <div class="hint">Внутренние фото: замеры рулеткой, дефекты, повреждения. На Avito не попадают.</div>
+                    <div class="tech-grid" id="techGrid"></div>
+                    <div class="tech-count" id="techCount">0 из 10</div>
+                </div>
+            </div>
+
+        </form>
+
+        <div class="delete-link">
+            <a href="{{ url_for('item_card', item_id=item.id) }}">← Вернуться к карточке</a>
+        </div>
+    </div>
+
+<script>
+const SUB_MAP = {
+{% for c, info in avito_cats.items() %}
+    {{ c | tojson }}: {{ (info.get('subcategories') or []) | tojson }},
+{% endfor %}
+};
+function updateSubs(){
+    const cat = document.getElementById('catSelect').value;
+    const sub = document.getElementById('subSelect');
+    const current = sub.value;
+    const subs = SUB_MAP[cat] || [];
+    sub.innerHTML = '';
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = subs.length ? '— без подкатегории —' : '— нет подкатегорий —';
+    sub.appendChild(empty);
+    subs.forEach(function(s){
+        const o = document.createElement('option');
+        o.value = s; o.textContent = s;
+        if (s === current) o.selected = true;
+        sub.appendChild(o);
+    });
+}
+</script>
+
+<!-- Полноэкранный просмотр фото -->
+<div class="preview-overlay" id="previewOverlay">
+    <div class="prev-top">
+        <span class="prev-pos" id="prevPos">1 из 1</span>
+        <button type="button" class="prev-close" id="prevClose">✕</button>
+    </div>
+    <img id="prevImg" alt="Просмотр фото">
+    <div class="prev-bottom">
+        <button type="button" class="prev-btn" id="prevLeft">←</button>
+        <button type="button" class="prev-btn accent" id="prevMain">★ Главное</button>
+        <button type="button" class="prev-btn" id="prevRight">→</button>
+        <button type="button" class="prev-btn danger" id="prevDelete">Удалить</button>
+    </div>
+</div>
+
+<script>
+(function(){
+    const input = document.getElementById('photoInput');
+    const area = document.getElementById('photoArea');
+    const grid = document.getElementById('photoGrid');
+    const count = document.getElementById('photoCount');
+    const orderInput = document.getElementById('photoOrderInput');
+    const overlay = document.getElementById('previewOverlay');
+    const prevImg = document.getElementById('prevImg');
+    const prevPos = document.getElementById('prevPos');
+    const MAX = 10, MAX_SIZE = 25 * 1024 * 1024; // 25 МБ на файл
+    let items = [];   // {kind:'old', path} | {kind:'new', file}
+    let curIdx = 0;
+    let dragFrom = null;
+    const urlMap = new Map(); // File -> objectURL
+
+    // существующие фото из БД
+    const INITIAL = {{ photo_list | tojson }};
+    (INITIAL || []).forEach(function(p){
+        if (p && p.trim()) items.push({kind: 'old', path: p.trim()});
+    });
+
+    function urlOf(it){
+        if (it.kind === 'old') return it.path;
+        if (!urlMap.has(it.file)) urlMap.set(it.file, URL.createObjectURL(it.file));
+        return urlMap.get(it.file);
+    }
+    function dropIt(it){
+        if (it.kind === 'new' && urlMap.has(it.file)) { URL.revokeObjectURL(urlMap.get(it.file)); urlMap.delete(it.file); }
+    }
+
+    // ── Добавление файлов с валидацией ──
+    function addFiles(fileList){
+        const arr = Array.from(fileList);
+        const warns = [];
+        for (const f of arr){
+            if (items.length >= MAX) { warns.push('Можно не больше ' + MAX + ' фото'); break; }
+            if (!f.type || !f.type.startsWith('image/')) { warns.push('«' + f.name + '» — не картинка, пропущено'); continue; }
+            if (f.size > MAX_SIZE) { warns.push('«' + f.name + '» больше 25 МБ, пропущено'); continue; }
+            if (items.some(function(x){ return x.kind === 'new' && x.file.name === f.name && x.file.size === f.size; })) { warns.push('«' + f.name + '» уже добавлено'); continue; }
+            items.push({kind: 'new', file: f});
+        }
+        if (warns.length) alert(warns.join('\n'));
+        renderThumbs();
+        syncInput();
+        input.value = '';
+    }
+    input.onchange = function(e){ addFiles(e.target.files); };
+
+    // ── Drag & drop файлов на область ──
+    ['dragover', 'dragenter'].forEach(function(ev){
+        area.addEventListener(ev, function(e){ e.preventDefault(); area.classList.add('drag'); });
+    });
+    ['dragleave', 'drop'].forEach(function(ev){
+        area.addEventListener(ev, function(e){ e.preventDefault(); area.classList.remove('drag'); });
+    });
+    area.addEventListener('drop', function(e){
+        e.preventDefault();
+        if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+    });
+    document.addEventListener('dragover', function(e){ e.preventDefault(); });
+    document.addEventListener('drop', function(e){ e.preventDefault(); });
+
+    // ── Синхронизация перед отправкой: порядок старых + новые файлы ──
+    function syncInput(){
+        orderInput.value = JSON.stringify(
+            items.filter(function(x){ return x.kind === 'old'; }).map(function(x){ return x.path; })
+        );
+        try {
+            const dt = new DataTransfer();
+            items.forEach(function(x){ if (x.kind === 'new') dt.items.add(x.file); });
+            input.files = dt.files;
+        } catch(err){ /* старый браузер — новые файлы уже лежат в input */ }
+    }
+    document.getElementById('editForm').addEventListener('submit', function(){ syncInput(); });
+
+    // ── Отрисовка превью ──
+    function renderThumbs(){
+        grid.innerHTML = '';
+        items.forEach(function(it, idx){
+            const wrap = document.createElement('div');
+            wrap.className = 'thumb-wrap' + (idx === 0 ? ' first' : '');
+            wrap.draggable = true;
+            wrap.title = 'Клик — просмотр, перетащите — изменить порядок';
+
+            const img = document.createElement('img');
+            img.src = urlOf(it);
+            img.draggable = false;
+
+            const main = document.createElement('div');
+            main.className = 'main-badge';
+            main.textContent = '★ 1';
+            main.style.display = idx === 0 ? 'block' : 'none';
+
+            const del = document.createElement('div');
+            del.className = 'del';
+            del.textContent = '×';
+            del.onclick = function(e){ e.stopPropagation(); removeAt(idx); };
+
+            wrap.appendChild(img);
+            wrap.appendChild(main);
+            wrap.appendChild(del);
+            wrap.onclick = function(){ openPreview(idx); };
+            wireDrag(wrap, idx);
+            grid.appendChild(wrap);
+        });
+        count.textContent = items.length + ' из 10' + (items.length ? ' · первое фото — главное' : '');
+    }
+
+    function removeAt(idx){
+        dropIt(items[idx]);
+        items.splice(idx, 1);
+        if (!items.length) closePreview();
+        renderThumbs();
+        syncInput();
+    }
+
+    // ── Перетаскивание превью (смена порядка) ──
+    function wireDrag(wrap, idx){
+        wrap.addEventListener('dragstart', function(e){
+            dragFrom = idx;
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        wrap.addEventListener('dragover', function(e){ e.preventDefault(); });
+        wrap.addEventListener('drop', function(e){
+            e.preventDefault();
+            if (dragFrom === null || dragFrom === idx) return;
+            const moved = items.splice(dragFrom, 1)[0];
+            items.splice(idx, 0, moved);
+            dragFrom = null;
+            renderThumbs();
+            syncInput();
+        });
+        wrap.addEventListener('dragend', function(){ dragFrom = null; });
+    }
+
+    // ── Полноэкранный просмотр ──
+    function openPreview(idx){
+        curIdx = idx;
+        prevImg.src = urlOf(items[idx]);
+        prevPos.textContent = (idx + 1) + ' из ' + items.length;
+        overlay.style.display = 'flex';
+    }
+    function closePreview(){
+        overlay.style.display = 'none';
+        prevImg.src = '';
+    }
+    document.getElementById('prevClose').onclick = closePreview;
+    overlay.onclick = function(e){ if (e.target === overlay) closePreview(); };
+    document.getElementById('prevLeft').onclick = function(){
+        if (!items.length) return;
+        curIdx = (curIdx - 1 + items.length) % items.length;
+        openPreview(curIdx);
+    };
+    document.getElementById('prevRight').onclick = function(){
+        if (!items.length) return;
+        curIdx = (curIdx + 1) % items.length;
+        openPreview(curIdx);
+    };
+    document.getElementById('prevMain').onclick = function(){
+        if (curIdx === 0) return;
+        const moved = items.splice(curIdx, 1)[0];
+        items.unshift(moved);
+        renderThumbs(); syncInput();
+        openPreview(0);
+    };
+    document.getElementById('prevDelete').onclick = function(){ removeAt(curIdx); };
+
+    // стартовый рендер
+    renderThumbs();
+    syncInput();
+})();
+</script>
+    <script>
+        // ── Техгалерея «Замеры и косяки» ──
+        (function () {
+            var input = document.getElementById('techPhotoInput');
+            var grid = document.getElementById('techGrid');
+            var count = document.getElementById('techCount');
+            var order = document.getElementById('techOrderInput');
+            if (!input || !grid || !order) return;
+            var items = []; // {kind:'old', path} | {kind:'new', file}
+            {% set tech_list = (item.tech_photos or '').split(',') if item.tech_photos else [] %}
+            var INITIAL_TECH = {{ tech_list | tojson }};
+            (INITIAL_TECH || []).forEach(function (p) {
+                if (p && p.trim()) items.push({kind: 'old', path: p.trim()});
+            });
+            var urlMap = new Map();
+            function urlOf(it) {
+                if (it.kind === 'old') return it.path;
+                if (!urlMap.has(it.file)) urlMap.set(it.file, URL.createObjectURL(it.file));
+                return urlMap.get(it.file);
+            }
+            function sync() {
+                order.value = JSON.stringify(
+                    items.filter(function (x) { return x.kind === 'old'; }).map(function (x) { return x.path; })
+                );
+                try {
+                    var dt = new DataTransfer();
+                    items.forEach(function (x) { if (x.kind === 'new') dt.items.add(x.file); });
+                    input.files = dt.files;
+                } catch (err) {}
+            }
+            function render() {
+                grid.innerHTML = '';
+                items.forEach(function (it, idx) {
+                    var wrap = document.createElement('div');
+                    wrap.className = 'tech-thumb';
+                    var img = document.createElement('img');
+                    img.src = urlOf(it);
+                    var del = document.createElement('div');
+                    del.className = 'tech-del';
+                    del.textContent = '×';
+                    del.onclick = (function (i) {
+                        return function (e) {
+                            e.stopPropagation();
+                            items.splice(i, 1);
+                            render();
+                            sync();
+                        };
+                    })(idx);
+                    wrap.appendChild(img);
+                    wrap.appendChild(del);
+                    grid.appendChild(wrap);
+                });
+                count.textContent = items.length + ' из 10';
+            }
+            input.addEventListener('change', function () {
+                for (var i = 0; i < input.files.length; i++) {
+                    if (items.length >= 10) break;
+                    items.push({kind: 'new', file: input.files[i]});
+                }
+                render();
+                sync();
+            });
+            document.getElementById('editForm').addEventListener('submit', function () { sync(); });
+            render();
+            sync();
+        })();
+    </script>
+
+    <script>
+        function supplierChanged() {
+            var sel = document.getElementById('supplierSelect');
+            var cust = document.getElementById('supplierCustom');
+            if (sel.value === 'Другое') { cust.style.display = 'block'; cust.focus(); }
+            else { cust.style.display = 'none'; cust.value = ''; }
+        }
+    </script>
+</body>
+</html>

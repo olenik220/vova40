@@ -6,3 +6,8 @@ static/uploads/*
 !static/uploads/.gitkeep
 token.pickle
 bot.log
+.env.bak*
+
+backups/
+*.zip
+*.db

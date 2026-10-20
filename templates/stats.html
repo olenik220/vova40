@@ -12,10 +12,7 @@
                   border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
         .header a { text-decoration: none; font-size: 22px; color: #333; }
         .header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .header h1 .logo { display: inline-flex; align-items: center; justify-content: center;
-                           background: linear-gradient(135deg, #4A90D9, #357ABD);
-                           color: white; border-radius: 10px; padding: 2px 8px;
-                           font-size: 14px; font-weight: 800; letter-spacing: 1px; }
+        .header h1 .logo { display: block; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
         .content { max-width: 500px; margin: 0 auto; padding: 12px; }
         .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px;
                 box-shadow: 0 2px 8px rgba(0,0,0,.04); }
@@ -35,84 +32,200 @@
         .empty { color: #aaa; font-size: 14px; text-align: center; padding: 12px; }
         .back-btn { display: inline-block; margin-top: 8px; text-decoration: none; color: #4A90D9;
                     font-weight: 600; font-size: 15px; }
+        .period-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .period-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 8px;
+                      background: #fafafa; color: #555; font-size: 13px; cursor: pointer;
+                      text-decoration: none; font-weight: 600; }
+        .period-btn.active { background: #4A90D9; color: white; border-color: #4A90D9; }
+        .period-info { font-size: 12px; color: #999; margin-bottom: 10px; }
+        .warn { background: #fff8e1; color: #8d6e63; border-radius: 12px; padding: 10px 14px;
+                font-size: 13px; margin-top: 12px; }
+        .sold-rev { color: #2e7d32; font-weight: 800; }
     </style>
+<link rel="stylesheet" href="/static/fontawesome/all.min.css">
 </head>
 <body>
     <div class="header">
-        <a href="{{ url_for('index') }}">←</a>
-        <h1><span class="logo">40</span> Vova40</h1>
-        <span style="font-size:14px;color:#888;">Статистика</span>
+        <a href="{{ url_for('warehouse_choice') }}">←</a>
+        <h1><img class="logo" src="/static/logo.jpg" alt="40"> Vova40</h1>
+        <span style="font-size:14px;color:#888;">Статистика · {{ wh_name }}{% if not is_admin %} · мои товары{% endif %}</span>
     </div>
 
     <div class="content">
-        <!-- Общие цифры -->
+        <!-- Товары по статусам -->
         <div class="card">
             <div class="big-number">{{ stats.total }}</div>
             <p style="text-align:center;color:#888;font-size:13px;margin-top:4px;">всего товаров</p>
             <div class="grid-2" style="margin-top:12px;">
                 <div class="stat-item">
-                    <div class="num" style="color:#2e7d32;">{{ stats.in_stock }}</div>
+                    <a class="num" style="color:#e65100; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='В закупке') }}">{{ stats.in_work }}</a>
+                    <div class="lbl">В закупке</div>
+                </div>
+                <div class="stat-item">
+                    <a class="num" style="color:#2e7d32; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='В наличии') }}">{{ stats.in_stock }}</a>
                     <div class="lbl">В наличии</div>
                 </div>
                 <div class="stat-item">
-                    <div class="num" style="color:#1565c0;">{{ stats.on_avito }}</div>
+                    <a class="num" style="color:#1565c0; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='На Avito') }}">{{ stats.on_avito }}</a>
                     <div class="lbl">На Avito</div>
                 </div>
                 <div class="stat-item">
-                    <div class="num" style="color:#c62828;">{{ stats.sold }}</div>
+                    <a class="num" style="color:#4527a0; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='В доставке') }}">{{ stats.in_delivery }}</a>
+                    <div class="lbl">В доставке</div>
+                </div>
+                <div class="stat-item">
+                    <a class="num" style="color:#c62828; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='Продано') }}">{{ stats.sold }}</a>
                     <div class="lbl">Продано</div>
                 </div>
                 <div class="stat-item">
-                    <div class="num" style="color:#999;">{{ stats.total - stats.in_stock - stats.on_avito - stats.sold }}</div>
-                    <div class="lbl">Другое</div>
+                    <a class="num" style="color:#999; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='Списано') }}">{{ stats.written_off }}</a>
+                    <div class="lbl">Списано</div>
                 </div>
             </div>
         </div>
 
-        <!-- Деньги -->
+        <!-- Фактическая прибыль -->
         <div class="card">
-            <h3>💰 Деньги</h3>
+            <h3><i class="fa-solid fa-circle-check"></i> Продано (факт)</h3>
+            <div class="period-bar">
+                {% set periods = [('all', 'Всё время'), ('7d', '7 дней'), ('30d', '30 дней'), ('month', 'Месяц')] %}
+                {% for key, label in periods %}
+                    <a href="{% if request.endpoint == 'stats' %}{{ url_for('stats', wh_id=wh_id, period=key) }}{% else %}{{ url_for('stats_all', period=key) }}{% endif %}" class="period-btn {{ 'active' if period == key else '' }}">{{ label }}</a>
+                {% endfor %}
+                <button class="period-btn" onclick="document.getElementById('customPeriod').style.display = document.getElementById('customPeriod').style.display === 'none' ? 'block' : 'none';">Свой</button>
+            </div>
+            <div id="customPeriod" style="display:{{ 'block' if period == 'custom' else 'none' }}; margin-bottom:10px;">
+                <form method="GET" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="period" value="custom">
+                    <input type="date" name="date_from" value="{{ date_from }}" style="flex:1; min-width:120px; padding:6px; border:1px solid #ddd; border-radius:8px; font-size:14px;">
+                    <span style="color:#888;">—</span>
+                    <input type="date" name="date_to" value="{{ date_to }}" style="flex:1; min-width:120px; padding:6px; border:1px solid #ddd; border-radius:8px; font-size:14px;">
+                    <button type="submit" style="padding:6px 12px; border:none; border-radius:8px; background:#4A90D9; color:white; font-size:14px; cursor:pointer;">OK</button>
+                </form>
+            </div>
+            <div class="period-info">
+                {% if period == '7d' %}За последние 7 дней{% elif period == '30d' %}За последние 30 дней{% elif period == 'month' %}За текущий месяц{% elif period == 'custom' %}Свой период ({{ date_from or 'начало' }} — {{ date_to or 'сегодня' }}){% else %}За всё время{% endif %}
+            </div>
+            {% if stats.sold_count == 0 %}
+                <div class="empty">Пока нет продаж — поставьте товару статус «Продано», и здесь появится расчёт.</div>
+            {% else %}
+            {% set a_sold = (stats.sold_revenue|int * avito_comm / 100)|int %}
+            {% set t_sold = (stats.sold_revenue|int * tax_pct / 100)|int %}
+            {% set net_sold = stats.sold_revenue|int - stats.sold_purchase|int - a_sold - t_sold %}
             <div class="stat-line">
-                <span class="lbl">Закуплено всего</span>
-                <span class="val">{{ stats.total_purchase|int }} ₽</span>
+                <span class="lbl"><i class="fa-solid fa-boxes"></i> Продано товаров</span>
+                <span class="val">{{ stats.sold_count }} шт.</span>
             </div>
             <div class="stat-line">
-                <span class="lbl">Продаётся на</span>
-                <span class="val">{{ stats.total_sale|int }} ₽</span>
+                <span class="lbl">Выручка</span>
+                <span class="val sold-rev">{{ stats.sold_revenue|int }} ₽</span>
             </div>
             <div class="stat-line">
-                <span class="lbl">Потенциальная прибыль</span>
-                <span class="val {{ 'profit-positive' if profit >= 0 else 'profit-negative' }}">{{ profit|int }} ₽</span>
+                <span class="lbl">Закупка проданного</span>
+                <span class="val">− {{ stats.sold_purchase|int }} ₽</span>
+            </div>
+            <div class="stat-line">
+                <span class="lbl">Маржа до вычетов</span>
+                <span class="val {{ 'profit-positive' if stats.sold_profit >= 0 else 'profit-negative' }}">{{ stats.sold_profit|int }} ₽</span>
+            </div>
+            <div class="stat-line">
+                <span class="lbl">Комиссия Avito ({{ avito_comm|int }}%)</span>
+                <span class="val" style="color:#e65100;">− {{ a_sold }} ₽</span>
+            </div>
+            <div class="stat-line">
+                <span class="lbl">Налог ({{ tax_pct|int }}%)</span>
+                <span class="val" style="color:#e65100;">− {{ t_sold }} ₽</span>
+            </div>
+            <div class="stat-line" style="border-top:2px solid #0a0;">
+                <span class="lbl" style="font-weight:700;">Чистая прибыль</span>
+                <span class="val" style="font-weight:800;color:{{ '#2e7d32' if net_sold >= 0 else '#c62828' }};">{{ net_sold }} ₽</span>
+            </div>
+            {% if stats.avg_check %}
+            <div class="stat-line">
+                <span class="lbl"><i class="fa-solid fa-receipt"></i> Средний чек</span>
+                <span class="val">{{ stats.avg_check|int }} ₽</span>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Потенциальная прибыль -->
+        <div class="card">
+            <h3><i class="fa-solid fa-hourglass-half"></i> В закупке (потенциал)</h3>
+            {% set a_pot = (stats.potential_revenue|int * avito_comm / 100)|int %}
+            {% set t_pot = (stats.potential_revenue|int * tax_pct / 100)|int %}
+            {% set net_pot = stats.potential_revenue|int - (stats.invested|int) - a_pot - t_pot %}
+            <div class="stat-line">
+                <span class="lbl">Заморожено в закупке</span>
+                <span class="val">{{ stats.invested|int }} ₽</span>
+            </div>
+            <div class="stat-line">
+                <span class="lbl">Ожидаемая выручка (В наличии + Avito + доставка)</span>
+                <span class="val">{{ stats.potential_revenue|int }} ₽</span>
+            </div>
+            <div class="stat-line">
+                <span class="lbl">Комиссия Avito ({{ avito_comm|int }}%)</span>
+                <span class="val" style="color:#e65100;">− {{ a_pot }} ₽</span>
+            </div>
+            <div class="stat-line">
+                <span class="lbl">Налог ({{ tax_pct|int }}%)</span>
+                <span class="val" style="color:#e65100;">− {{ t_pot }} ₽</span>
+            </div>
+            <div class="stat-line" style="border-top:2px solid #357ABD;">
+                <span class="lbl" style="font-weight:700;">Потенциальная чистая прибыль</span>
+                <span class="val" style="font-weight:800;color:{{ '#2e7d32' if net_pot >= 0 else '#c62828' }};">{{ net_pot }} ₽</span>
+            </div>
+            <div class="warn">
+                <i class="fa-solid fa-circle-info"></i>
+                Закуплено всего: {{ stats.total_purchase|int }} ₽ · Продаётся на: {{ stats.total_sale|int }} ₽ (по всем товарам)
             </div>
         </div>
 
-        <!-- Категории -->
-        {% if stats.by_category %}
+        <!-- Продажи по месяцам -->
+        {% if stats.by_month %}
         <div class="card">
-            <h3>📦 Категории</h3>
-            {% for cat, count in stats.by_category.items() %}
+            <h3><i class="fa-solid fa-calendar"></i> Продажи по месяцам</h3>
+            {% for month, m in stats.by_month.items()|sort(reverse=true) %}
                 <div class="stat-line">
-                    <span class="lbl">{{ cat }}</span>
-                    <span class="val">{{ count }}</span>
+                    <span class="lbl">{{ month }}</span>
+                    <span class="val">{{ m.count }} шт · {{ m.revenue|int }} ₽</span>
                 </div>
             {% endfor %}
         </div>
         {% endif %}
 
-        <!-- Этапы -->
-        {% if stats.by_stage %}
+        <!-- Авторы товаров -->
+        {% if stats.by_author %}
+        {% if is_admin %}
         <div class="card">
-            <h3>🔄 Этапы обработки</h3>
-            {% for stage, count in stats.by_stage.items() %}
+            <h3><i class="fa-solid fa-user-pen"></i> Авторы товаров</h3>
+            <div class="stat-line">
+                <span class="lbl">{{ 'Добавлено за период' if period != 'all' else 'Добавлено всего' }}</span>
+                <span class="val">{{ stats.authors_added }} шт.</span>
+            </div>
+            {% for author, cnt in stats.by_author|dictsort(by='value', reverse=true) %}
                 <div class="stat-line">
-                    <span class="lbl">{{ stage }}</span>
-                    <span class="val">{{ count }}</span>
+                    <span class="lbl">{{ author }}</span>
+                    <span class="val">{{ cnt }} шт.</span>
                 </div>
             {% endfor %}
         </div>
+        {% else %}
+        <div class="card">
+            <h3><i class="fa-solid fa-user-pen"></i> Мои товары</h3>
+            <div class="big-number">{{ stats.authors_added }}</div>
+            <p style="text-align:center;color:#888;font-size:13px;margin-top:4px;">
+                {% if period == '7d' %}добавлено за последние 7 дней
+                {% elif period == '30d' %}добавлено за последние 30 дней
+                {% elif period == 'month' %}добавлено за текущий месяц
+                {% elif period == 'custom' %}добавлено за выбранный период
+                {% else %}добавлено за всё время{% endif %}
+            </p>
+        </div>
+        {% endif %}
         {% endif %}
 
-        <a class="back-btn" href="{{ url_for('index') }}">← Назад к списку</a>
+        <a class="back-btn" href="{{ url_for('warehouse_choice') }}">← Назад к списку</a>
     </div>
 </body>
 </html>

@@ -97,13 +97,13 @@ class GoogleSheetsSync:
             from googleapiclient.errors import HttpError
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=config.GOOGLE_SHEETS_ID,
-                range="Лист1!A1:N1",
+                range="Лист1!A1:M1",
             ).execute()
             values = result.get("values", [])
             if not values:
                 self.service.spreadsheets().values().update(
                     spreadsheetId=config.GOOGLE_SHEETS_ID,
-                    range="Лист1!A1:N1",
+                    range="Лист1!A1:M1",
                     valueInputOption="RAW",
                     body={"values": [config.SHEET_HEADERS]},
                 ).execute()
@@ -127,7 +127,6 @@ class GoogleSheetsSync:
                 str(item.get("purchase_price", 0)),
                 str(item.get("sale_price", 0)),
                 item.get("status", "В наличии"),
-                item.get("stage", ""),
                 item.get("photo_file_id", ""),
                 item.get("description", ""),
                 item.get("avito_link", ""),
@@ -179,18 +178,11 @@ class GoogleSheetsSync:
                 valueInputOption="USER_ENTERED",
                 body={"values":[["На Avito"]]},
             ).execute()
-            # Этап — J (10)
-            self.service.spreadsheets().values().update(
-                spreadsheetId=config.GOOGLE_SHEETS_ID,
-                range=f"Лист1!J{row}",
-                valueInputOption="USER_ENTERED",
-                body={"values":[["📢 Опубликовано на Avito"]]},
-            ).execute()
         except Exception as e:
             logger.error(f"Ошибка синхронизации Avito: {e}")
 
-    def sync_status(self, item_id: int, status: str, stage: str = ""):
-        """Синхронизирует статус и этап."""
+    def sync_status(self, item_id: int, status: str):
+        """Синхронизирует статус."""
         if not self.is_available:
             return
         try:
@@ -201,13 +193,6 @@ class GoogleSheetsSync:
                 valueInputOption="USER_ENTERED",
                 body={"values": [[status]]},
             ).execute()
-            if stage:
-                self.service.spreadsheets().values().update(
-                    spreadsheetId=config.GOOGLE_SHEETS_ID,
-                    range=f"Лист1!J{row}",
-                    valueInputOption="USER_ENTERED",
-                    body={"values": [[stage]]},
-                ).execute()
         except Exception as e:
             logger.error(f"Ошибка синхронизации статуса: {e}")
 

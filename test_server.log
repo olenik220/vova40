@@ -1,0 +1,80 @@
+40 Vova40 — учёт секонд-хенда
+   На этом ПК:  http://127.0.0.1:5000
+   С телефона:  http://192.168.0.109:5000
+   AI: YandexGPT
+   Нажми Ctrl+C для остановки.
+ * Serving Flask app 'app'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.109:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:21] "[32mPOST /login HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:21] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:21] "GET /warehouse/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:31] "[32mPOST /login HTTP/1.1[0m" 302 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:31] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:31] "GET /warehouse/base/items?category=Женская%20одежда HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:31] "GET /add/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:13:31] "GET /warehouse/coffee HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:29] "GET /warehouse/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:29] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:31] "GET /warehouse/base/items?category=Женская+одежда HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:31] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:31] "[36mGET /static/uploads/base/a954bf01c23a4aaeb0f57ab3e493153f.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:31] "[36mGET /static/uploads/base/4c6acba68b084bdb9718c072ee2e3ba3.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:33] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:33] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:35] "GET /warehouse/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:35] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:36] "GET /add/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:37] "GET /add/base?category=Женская+одежда HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:38] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:40] "GET /add/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:41] "GET /add/base?category=Женская+обувь HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:42] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:42] "GET /add/base?category=Женская+обувь&subcategory=Мокасины+и+лоферы HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:43] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:46] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:46] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:47] "GET /warehouse/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:47] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:48] "GET /warehouse/base/items?category=Женская+одежда HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:48] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:48] "[36mGET /static/uploads/base/a954bf01c23a4aaeb0f57ab3e493153f.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:48] "[36mGET /static/uploads/base/4c6acba68b084bdb9718c072ee2e3ba3.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:49] "GET /item/8 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:49] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:49] "[36mGET /static/uploads/base/a954bf01c23a4aaeb0f57ab3e493153f.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:49] "[36mGET /static/uploads/base/712a6b31c907477ca880cf5e5f110bf8.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:49] "[36mGET /static/uploads/base/09584d6a87be4d31a7c964ea2cc4ec70.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "GET /warehouse/base/items HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "[36mGET /static/uploads/base/a954bf01c23a4aaeb0f57ab3e493153f.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "[36mGET /static/uploads/base/4c6acba68b084bdb9718c072ee2e3ba3.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "[36mGET /static/uploads/cc8e32a6528540428b3147b5ea904308.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "[36mGET /static/uploads/76de141f8fc848ccb22329de4c31cb17.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:56] "[36mGET /static/uploads/0f33ea2126fa494d92aad639c0333b60.png HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:58] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:15:58] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:30] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:30] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:32] "GET /warehouse/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:32] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:34] "GET /warehouse/base/items?category=Женская+одежда HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:34] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:34] "[36mGET /static/uploads/base/a954bf01c23a4aaeb0f57ab3e493153f.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:34] "[36mGET /static/uploads/base/4c6acba68b084bdb9718c072ee2e3ba3.jpg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:35] "GET /item/8 HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:35] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:35] "[36mGET /static/uploads/base/a954bf01c23a4aaeb0f57ab3e493153f.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:35] "[36mGET /static/uploads/base/712a6b31c907477ca880cf5e5f110bf8.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:19:35] "[36mGET /static/uploads/base/09584d6a87be4d31a7c964ea2cc4ec70.jpeg HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:01] "GET /add/base HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:03] "GET /add/base?category=Женская+одежда HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:03] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:05] "GET /add/base?category=Женская+одежда&subcategory=Плащи HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:05] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:10] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [10/Oct/2026 11:20:10] "[36mGET /static/fontawesome/all.min.css HTTP/1.1[0m" 304 -

@@ -8,13 +8,10 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                background: #f5f5f5; color: #333; padding-bottom: 80px; }
-        .header { background: white; padding: 16px 20px; display: flex; align-items: center;
+        .header { background: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px;
                   justify-content: space-between; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
-        .header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .header h1 .logo { display: inline-flex; align-items: center; justify-content: center;
-                           background: linear-gradient(135deg, #4A90D9, #357ABD);
-                           color: white; border-radius: 10px; padding: 2px 8px;
-                           font-size: 14px; font-weight: 800; letter-spacing: 1px; }
+        .header h1 { font-size:18px; font-weight:700; display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden }
+        .header h1 .logo { display: block; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
         .header a { text-decoration: none; color: #4A90D9; font-weight: 600; font-size: 14px; }
         .content { max-width: 600px; margin: 0 auto; padding: 12px; }
         .stats-row { background: white; border-radius: 12px; padding: 16px; display: flex; justify-content: space-around;
@@ -38,6 +35,8 @@
         .item .status-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
                              display: inline-block; }
         .badge-stock { background: #e8f5e9; color: #2e7d32; }
+    .badge-work { background: #fff3e0; color: #e65100; }
+    .badge-delivery { background: #ede7f6; color: #4527a0; }
         .badge-avito { background: #e3f2fd; color: #1565c0; }
         .badge-sold { background: #fce4ec; color: #c62828; }
         .badge-writeoff { background: #f5f5f5; color: #999; }
@@ -54,17 +53,18 @@
         .flash.success { background: #e8f5e9; color: #2e7d32; }
         .flash.danger { background: #ffe0e0; color: #d00; }
         .flash.warning { background: #fff8e1; color: #f57f17; }
-        .header-links { display: flex; gap: 12px; }
+        .header-links { display: flex; gap: 12px; margin-left: auto; flex-shrink: 0; } .header-links .fa-chart-simple{font-size:20px}
         .header-links a { font-size: 13px; }
         .logout-btn { color: #d00 !important; }
     </style>
+<link rel="stylesheet" href="/static/fontawesome/all.min.css">
 </head>
 <body>
     <div class="header">
-        <h1><span class="logo">40</span> Vova40</h1>
+        <h1><img class="logo" src="/static/logo.jpg" alt="40"> Vova40</h1>
         <div class="header-links">
-            <a href="{{ url_for('stats') }}">📊</a>
-            <a href="{{ url_for('logout') }}" class="logout-btn">🚪</a>
+            <a href="{{ url_for('stats') }}"><i class="fa-solid fa-chart-simple"></i></a>
+            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i></a>
         </div>
     </div>
 
@@ -99,18 +99,23 @@
         {% if items %}
             {% for item in items %}
                 <a href="{{ url_for('item_card', item_id=item.id) }}" class="item">
-                    {% if item.photo_file_id and item.photo_file_id.startswith('/') %}
-                        <img class="photo" src="{{ item.photo_file_id }}" alt="photo">
+                    {% set fp = (item.photos or '').split(',')[0] if item.photos else '' %}
+                    {% if fp and fp.strip() %}
+                        <img class="photo" src="{{ fp.strip() }}" alt="photo">
                     {% else %}
-                        <div class="photo-placeholder">👕</div>
+                        <div class="photo-placeholder"><i class="fa-solid fa-shirt"></i></div>
                     {% endif %}
                     <div class="info">
                         <div class="brand">{{ item.brand or '?' }}
                             {% set st = item.status %}
                             {% if st == 'В наличии' %}
                                 <span class="status-badge badge-stock">{{ st }}</span>
+                            {% elif st == 'В закупке' %}
+                                <span class="status-badge badge-work">{{ st }}</span>
                             {% elif st == 'На Avito' %}
                                 <span class="status-badge badge-avito">{{ st }}</span>
+                            {% elif st == 'В доставке' %}
+                                <span class="status-badge badge-delivery">{{ st }}</span>
                             {% elif st == 'Продано' %}
                                 <span class="status-badge badge-sold">{{ st }}</span>
                             {% else %}
@@ -124,13 +129,13 @@
             {% endfor %}
         {% else %}
             <div class="empty">
-                <div class="icon">📋</div>
+                <div class="icon"><i class="fa-solid fa-clipboard"></i></div>
                 <p>Пока нет товаров</p>
                 <p style="margin-top:8px;font-size:14px;">Нажмите + чтобы добавить</p>
             </div>
         {% endif %}
     </div>
 
-    <a href="{{ url_for('add_item') }}" class="fab">+</a>
+    <a href="{{ url_for('warehouse_choice') }}" class="fab"><i class="fa-solid fa-plus"></i></a>
 </body>
 </html>

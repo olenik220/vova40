@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vova40 — Подключение Avito</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+               background: #f5f5f5; color: #333; }
+        .header { background: white; padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+                  border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
+        .header a { text-decoration: none; font-size: 22px; color: #333; }
+        .header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .header h1 .logo { display: block; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .content { max-width: 500px; margin: 0 auto; padding: 12px; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+        .card h3 { font-size: 14px; color: #888; margin-bottom: 12px; }
+        .card h3 .step { display: inline-flex; align-items: center; justify-content: center;
+                         background: #4A90D9; color: white; border-radius: 50%;
+                         width: 20px; height: 20px; font-size: 12px; margin-right: 6px; }
+        label { display: block; font-size: 13px; color: #666; margin: 10px 0 4px; }
+        input[type=text], input[type=password] { width: 100%; padding: 10px; border: 1px solid #ddd;
+                       border-radius: 10px; font-size: 15px; }
+        .btn { display: inline-block; width: 100%; margin-top: 12px; padding: 12px; border: none;
+               border-radius: 12px; background: #4A90D9; color: white; font-size: 15px;
+               font-weight: 700; text-decoration: none; text-align: center; cursor: pointer; }
+        .btn.green { background: #2e7d32; }
+        .btn.gray { background: #e0e0e0; color: #333; }
+        .btn:disabled { background: #ccc; }
+        .status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px;
+                  font-size: 14px; margin-bottom: 12px; }
+        .status.ok { background: #e8f5e9; color: #2e7d32; }
+        .status.no { background: #fff8e1; color: #8d6e63; }
+        .hint { font-size: 12px; color: #999; margin-top: 8px; line-height: 1.5; }
+        .code-box { background: #fafafa; border: 1px dashed #ddd; border-radius: 10px;
+                    padding: 10px; font-size: 12px; color: #666; margin-top: 8px; word-break: break-all; }
+        .flash { padding: 10px 14px; border-radius: 12px; margin-bottom: 12px; font-size: 14px; }
+        .flash.success { background: #e8f5e9; color: #2e7d32; }
+        .flash.danger, .flash.error { background: #fdecea; color: #c62828; }
+        .back-btn { display: inline-block; margin-top: 8px; text-decoration: none; color: #4A90D9;
+                    font-weight: 600; font-size: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('warehouse_choice') }}">&larr;</a>
+        <h1><img class="logo" src="/static/logo.jpg" alt="40"> Vova40</h1>
+        <span style="font-size:14px;color:#888;">Подключение Avito</span>
+    </div>
+
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+                <div class="flash {{ cat }}">{{ msg }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if cfg.AVITO_API_READY and cfg.AVITO_ACCESS_TOKEN %}
+            <div class="status ok">&#10003; API Avito подключено</div>
+        {% elif cfg.AVITO_API_READY %}
+            <div class="status no">Ключи сохранены, но токен ещё не получен</div>
+        {% else %}
+            <div class="status no">API Avito не подключено</div>
+        {% endif %}
+
+        <!-- Шаг 1: ключи приложения -->
+        <div class="card">
+            <h3><span class="step">1</span> Ключи приложения (Client ID / Secret)</h3>
+            <form method="POST" action="{{ url_for('avito_setup') }}">
+                <label>Client ID</label>
+                <input type="text" name="client_id" value="{{ cfg.AVITO_CLIENT_ID }}" placeholder="1234567">
+                <label>Client Secret</label>
+                <input type="password" name="client_secret" value="{{ cfg.AVITO_CLIENT_SECRET }}" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+                <button class="btn" type="submit">Сохранить ключи</button>
+            </form>
+            <div class="hint">Где взять: developer.avito.ru &rarr; &laquo;Мои приложения&raquo; &rarr; &laquo;Создать приложение&raquo;.</div>
+        </div>
+
+        <!-- Шаг 2: авторизация и токен -->
+        <div class="card">
+            <h3><span class="step">2</span> Авторизация и токен</h3>
+            {% if cfg.AVITO_CLIENT_ID %}
+            {% set auth_base = 'https://api.avito.ru' %}
+            {% set auth_url = auth_base ~ '/oauth/authorize?client_id=' ~ cfg.AVITO_CLIENT_ID ~ '&response_type=code&redirect_uri=' ~ auth_base ~ '/' %}
+            <a class="btn gray" href="{{ auth_url }}" target="_blank" rel="noopener">Открыть окно авторизации Avito</a>
+            <div class="hint">Войдите в Avito, разрешите доступ. Браузер перейдёт на api.avito.ru — в адресной строке будет code=.... Скопируйте его.</div>
+            <form method="POST" action="{{ url_for('avito_token') }}" style="margin-top:10px;">
+                <label>Code из адресной строки</label>
+                <input type="text" name="code" placeholder="вставьте code=...">
+                <button class="btn green" type="submit">Получить и сохранить токен</button>
+            </form>
+            {% else %}
+            <div class="hint">Сначала сохраните Client ID в шаге 1.</div>
+            {% endif %}
+        </div>
+
+        <!-- Шаг 3: проверка -->
+        <div class="card">
+            <h3><span class="step">3</span> Проверка подключения</h3>
+            <form method="POST" action="{{ url_for('avito_check') }}">
+                <button class="btn" type="submit" {% if not cfg.AVITO_ACCESS_TOKEN %}disabled{% endif %}>Проверить токен</button>
+            </form>
+            <div class="hint">После сохранения ключей и токена перезапустите сервер, чтобы настройки подхватились.</div>
+        </div>
+
+                <!-- Шаг 4: синхронизация статусов -->
+        <div class="card">
+            <h3><span class="step">4</span> Синхронизация статусов</h3>
+            <form method="POST" action="{{ url_for('avito_sync_statuses') }}">
+                <button class="btn" type="submit" {% if not cfg.AVITO_ACCESS_TOKEN %}disabled{% endif %}>
+                    <i class="fa-solid fa-rotate"></i> Синхронизировать статусы с Avito
+                </button>
+            </form>
+            <div class="hint">Проверит все товары с avito_link: если на Авито статус <b>sold</b> — поставит «Продано» в приложении.</div>
+        </div>
+
+<a class="back-btn" href="{{ url_for('warehouse_choice') }}">&larr; Назад к списку</a>
+    </div>
+</body>
+</html>
