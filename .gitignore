@@ -11,3 +11,6 @@ bot.log
 backups/
 *.zip
 *.db
+
+server.log
+*.log
