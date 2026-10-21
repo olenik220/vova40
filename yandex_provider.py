@@ -30,7 +30,7 @@ class YandexGPTProvider:
 
     def generate(
         self,
-        image_bytes: Optional[list[bytes]],
+        images_bytes: Optional[list[bytes]],
         category: str,
         brand: str,
         size: str,
@@ -42,8 +42,8 @@ class YandexGPTProvider:
         attrs: Optional[object] = None,
         article: str = "",
     ) -> str:
-        """Генерирует описание через YandexGPT. image_bytes — список байт всех фото."""
-        prompt = self._build_prompt(category, brand, size, condition, sale_price, images_bytes=image_bytes, title=title, attrs=attrs, supplier=supplier)
+        """Генерирует описание через YandexGPT. images_bytes — список байт всех фото."""
+        prompt = self._build_prompt(category, brand, size, condition, sale_price, images_bytes=images_bytes, title=title, attrs=attrs, supplier=supplier)
 
         try:
             response = self._call_yandexgpt(prompt)
