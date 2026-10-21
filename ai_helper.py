@@ -73,13 +73,13 @@ class DescriptionGenerator:
         provider = self._get_provider()
         try:
             return provider.generate(
-                image_bytes=image_bytes, category=category, brand=brand, size=size,
+                images_bytes=image_bytes, category=category, brand=brand, size=size,
                 condition=condition, purchase_price=purchase_price, sale_price=sale_price,
                 title=title, supplier=supplier, attrs=attrs, article=article)
         except Exception as e:
             logger.error(f"Ошибка AI провайдера: {e}")
             return _TemplateProvider().generate(
-                image_bytes=image_bytes, category=category, brand=brand, size=size,
+                images_bytes=image_bytes, category=category, brand=brand, size=size,
                 condition=condition, purchase_price=purchase_price, sale_price=sale_price,
                 title=title, supplier=supplier, attrs=attrs, article=article)
 
