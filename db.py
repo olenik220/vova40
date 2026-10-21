@@ -87,6 +87,8 @@ class Database:
                 conn.execute("ALTER TABLE items ADD COLUMN sold_at TEXT NOT NULL DEFAULT ''")
                 # для уже проданных товаров датой продажи считаем updated_at
                 conn.execute("UPDATE items SET sold_at=updated_at WHERE status='Продано' AND sold_at=''")
+            if "supplier" not in existing:
+                conn.execute("ALTER TABLE items ADD COLUMN supplier TEXT NOT NULL DEFAULT ''")
             conn.commit()
         except Exception as e:
             logger.error(f"DB init: {e}")
