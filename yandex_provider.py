@@ -44,6 +44,9 @@ class YandexGPTProvider:
     ) -> str:
         """Генерирует описание через YandexGPT. images_bytes — список байт всех фото."""
         prompt = self._build_prompt(category, brand, size, condition, sale_price, images_bytes=images_bytes, title=title, attrs=attrs, supplier=supplier)
+        if not prompt:
+            logger.error("YandexGPT: промпт не собран (build_prompt вернул пусто) — шаблон")
+            return self._fallback(category, brand, size, condition, sale_price)
 
         try:
             response = self._call_yandexgpt(prompt)
@@ -92,37 +95,39 @@ class YandexGPTProvider:
                         unique.append(h); seen.add(h)
                 summary = " | ".join(unique)
                 photo_hint = f"Описание по фото (всего {len(unique)} снимков): {summary}\n"
-                return (
-            "Ты — продавец секонд-хенда на Avito. Напиши описание товара в твоём личном стиле.\n\n"
-            "ТВОЙ СТИЛЬ (строго соблюдай):\n"
-            "1. Начни с названия: [БРЕНД] [модель] — кратко и ёмко.\n"
-            "2. Опиши вещь подробно: материал, цвет, фактура, особенности, фасон. Покажи, что знаешь бренд.\n"
-            "3. Если есть интересная история бренда или культурная отсылка — добавь (как про Ben Sherman и модов).\n"
-            "4. Укажи размер и добавь «замеры скину».\n"
-            "5. Состояние опиши честно: «Идеальное состояние, без следов использования и нюансов» / «Отличное состояние, без дефектов» / «Состояние на фото».\n"
-            "6. Обязательно добавь: «Оригинал, как и все в профиле.»\n"
-            "7. Обязательно добавь: «! перед оформлением Авито-доставкой свяжитесь в сообщениях !»\n"
-            "8. В конце добавь блок «не [Бренд], не [Бренд]» — 6-12 строк с брендами, с которыми товар могут спутать (через запятую или по одному, с точками между).\n"
-            "9. Если у вещи есть совместимость/сочетаемость с другими брендами — добавь «/// подходит для [Бренд]» или «работает с [Бренд]».\n"
-            "10. Максимум 1000 символов. Пиши живым, естественным русским языком, как человек, а не маркетолог.\n\n"
-            f"Категория: {category}\n"
-            f"Бренд: {brand}\n"
-            f"Размер: {size}\n"
-            f"Состояние: {condition}\n"
-            f"Цена: {price:.0f} ₽\n\n"
-            + (f"Название: {title}\n" if title else "")
-            + (f"Характеристики: {attrs}\n" if attrs else "")
-            + (f"Поставщик: {supplier}\n" if supplier else "")
-            + f"{photo_hint}"
-            + "ПРИМЕР ожидаемого стиля (образец):\n"
-            + "LUKE 1977 New Orleans Jacket Black\n\n"
-            + "Классическая парка от британцев United Kingdom of LUKE — увесистая, матовый материал верха из смеси нейлона и полиестера, добротно утеплена, 6 объёмных наружных карманов + 1 внутренний.\n\n"
-            + "Высокий ворот, съемный на молнии капюшон — глубокий, с козырьком и утяжками.\n\n"
-            + "Размер мужской XL, замеры скину.\n\n"
-            + "Идеальное состояние, без следов использования и нюансов.\n\n"
-            + "Оригинал, как и все в профиле.\n\n"
-            + "! перед оформлением Авито-доставкой свяжитесь в сообщениях !\n\n"
-            + ".\nне R71212, не Baracuta\n.\nне Paul, не Shark\n.\nне Barbour, не Orvis\n.\nне Gore-Tex, не Fred Perry\n"
+        return (
+        "Ты — продавец секонд-хенда на Avito. Напиши описание товара в твоём личном стиле.\n\n"
+        "ТВОЙ СТИЛЬ (строго соблюдай):\n"
+        "1. Начни с названия: [БРЕНД] [модель] — кратко и ёмко.\n"
+        "2. Опиши вещь подробно: материал, цвет, фактура, особенности, фасон. Покажи, что знаешь бренд.\n"
+        "3. Если есть интересная история бренда или культурная отсылка — добавь (как про Ben Sherman и модов).\n"
+        "4. Укажи размер и добавь «замеры скину».\n"
+        "5. Состояние опиши честно: «Идеальное состояние, без следов использования и нюансов» / «Отличное состояние, без дефектов» / «Состояние на фото».\n"
+        "6. Обязательно добавь: «Оригинал, как и все в профиле.»\n"
+        "7. Обязательно добавь: «! перед оформлением Авито-доставкой свяжитесь в сообщениях !»\n"
+        "8. В конце добавь блок «не [Бренд], не [Бренд]» — 6-12 строк с брендами, с которыми товар могут спутать (через запятую или по одному, с точками между).\n"
+        "9. Если у вещи есть совместимость/сочетаемость с другими брендами — добавь «/// подходит для [Бренд]» или «работает с [Бренд]».\n"
+        "10. Максимум 1000 символов. Пиши живым, естественным русским языком, как человек, а не маркетолог.\n"
+        "11. НЕ используй markdown (никаких **, ##, ###) и не оборачивай заголовок в звёздочки.\n"
+        "12. Про размер пиши дословно: «замеры скину» (не «могу скинуть замеры»).\n\n"
+        f"Категория: {category}\n"
+        f"Бренд: {brand}\n"
+        f"Размер: {size}\n"
+        f"Состояние: {condition}\n"
+        f"Цена: {price:.0f} ₽\n\n"
+        + (f"Название: {title}\n" if title else "")
+        + (f"Характеристики: {attrs}\n" if attrs else "")
+        + (f"Поставщик: {supplier}\n" if supplier else "")
+        + f"{photo_hint}"
+        + "ПРИМЕР ожидаемого стиля (образец):\n"
+        + "LUKE 1977 New Orleans Jacket Black\n\n"
+        + "Классическая парка от британцев United Kingdom of LUKE — увесистая, матовый материал верха из смеси нейлона и полиестера, добротно утеплена, 6 объёмных наружных карманов + 1 внутренний.\n\n"
+        + "Высокий ворот, съемный на молнии капюшон — глубокий, с козырьком и утяжками.\n\n"
+        + "Размер мужской XL, замеры скину.\n\n"
+        + "Идеальное состояние, без следов использования и нюансов.\n\n"
+        + "Оригинал, как и все в профиле.\n\n"
+        + "! перед оформлением Авито-доставкой свяжитесь в сообщениях !\n\n"
+        + ".\nне R71212, не Baracuta\n.\nне Paul, не Shark\n.\nне Barbour, не Orvis\n.\nне Gore-Tex, не Fred Perry\n"
         )
 
     def _call_yandexgpt(self, prompt: str) -> Optional[str]:
@@ -137,7 +142,7 @@ class YandexGPTProvider:
             "completionOptions": {
                 "stream": False,
                 "temperature": 0.7,
-                "maxTokens": 1000,
+                "maxTokens": 1200,
             },
             "messages": [
                 {
@@ -148,14 +153,26 @@ class YandexGPTProvider:
             ],
         }
 
+        response = None
+        last_err = None
+        for attempt in (1, 2):
+            try:
+                response = requests.post(
+                    self.API_URL,
+                    headers=headers,
+                    json=data,
+                    timeout=60,
+                )
+                response.raise_for_status()
+                break
+            except requests.exceptions.RequestException as e:
+                last_err = e
+                logger.warning(f"YandexGPT попытка {attempt} не удалась: {e}")
+                response = None
+        if response is None:
+            logger.error(f"YandexGPT недоступен: {last_err}")
+            return None
         try:
-            response = requests.post(
-                self.API_URL,
-                headers=headers,
-                json=data,
-                timeout=30,
-            )
-            response.raise_for_status()
             result = response.json()
 
             # Парсим ответ
@@ -164,7 +181,9 @@ class YandexGPTProvider:
                 msg = alternatives[0].get("message", {})
                 text = msg.get("text", "") or msg.get("content", "")
                 if text:
-                    return text.strip()
+                    import re as _re
+                    clean = _re.sub(r"\*\*|__|^#+\s*", "", text, flags=_re.M)
+                    return clean.strip()
 
         except requests.exceptions.RequestException as e:
             logger.error(f"HTTP ошибка YandexGPT: {e}")
