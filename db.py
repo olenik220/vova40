@@ -89,6 +89,11 @@ class Database:
                 conn.execute("UPDATE items SET sold_at=updated_at WHERE status='Продано' AND sold_at=''")
             if "supplier" not in existing:
                 conn.execute("ALTER TABLE items ADD COLUMN supplier TEXT NOT NULL DEFAULT ''")
+            for _col, _type in (('avito_status', 'TEXT'), ('avito_finish', 'TEXT')):
+                try:
+                    conn.execute(f"ALTER TABLE items ADD COLUMN {_col} {_type}")
+                except Exception:
+                    pass
             conn.commit()
         except Exception as e:
             logger.error(f"DB init: {e}")

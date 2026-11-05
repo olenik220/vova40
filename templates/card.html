@@ -301,6 +301,19 @@
                     <td style="padding:6px 0;text-align:right;font-weight:600;">#{{ item.id }}</td></tr>
                 <tr><td style="padding:6px 0;color:#888;">Добавлен</td>
                     <td style="padding:6px 0;text-align:right;">{{ item.created_at or '?' }}</td></tr>
+                {% if item.sold_at %}
+                <tr><td style="padding:6px 0;color:#888;">Дата продажи</td>
+                    <td style="padding:6px 0;text-align:right;font-weight:600;">{{ item.sold_at }}</td></tr>
+                {% endif %}
+                {% if item.delivery_eta %}
+                <tr><td style="padding:6px 0;color:#888;">Срок доставки</td>
+                    <td style="padding:6px 0;text-align:right;font-weight:600;color:#1565c0;">{{ item.delivery_eta }}</td></tr>
+                {% endif %}
+                {% if item.avito_finish %}
+                <tr><td style="padding:6px 0;color:#888;">Объявление на Avito до</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.avito_finish.replace('T', ' ')[:16] }}
+                        {% if item.avito_status %}<span style="color:#888;">({{ item.avito_status }})</span>{% endif %}</td></tr>
+                {% endif %}
             </table>
         </div>
 
@@ -339,6 +352,10 @@
                 <div id="extraLink" style="display:none;margin-top:10px;">
                     <label>Ссылка на Avito</label>
                     <input type="text" name="avito_link" value="{{ item.avito_link or '' }}" placeholder="https://avito.ru/...">
+                </div>
+                <div id="extraEta" style="display:none;margin-top:10px;">
+                    <label>Срок доставки</label>
+                    <input type="text" name="delivery_eta" value="{{ item.delivery_eta or '' }}" placeholder="например: 3–5 дней, до 12.11">
                 </div>
                 <button type="submit" id="applyStatusBtn" class="btn btn-primary btn-sm" style="width:auto;margin-top:8px;display:none;">
                     <i class="fa-solid fa-check"></i> Применить
@@ -549,6 +566,7 @@
             var statusInput = document.getElementById('statusInput');
             var extraPrice = document.getElementById('extraPrice');
             var extraLink = document.getElementById('extraLink');
+            var extraEta = document.getElementById('extraEta');
             var applyBtn = document.getElementById('applyStatusBtn');
             if (!group) return;
             group.addEventListener('click', function (e) {
@@ -562,6 +580,7 @@
                 statusInput.value = st;
                 extraPrice.style.display = (st === 'Продано') ? '' : 'none';
                 extraLink.style.display = (st === 'На Avito') ? '' : 'none';
+                if (extraEta) extraEta.style.display = (st === 'В доставке') ? '' : 'none';
                 applyBtn.style.display = '';
             });
         })();
