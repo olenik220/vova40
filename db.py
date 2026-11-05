@@ -362,7 +362,7 @@ class Database:
         conn = self._get_conn()
         try:
             s = {"total": 0, "in_stock": 0, "in_work": 0, "on_avito": 0, "in_delivery": 0,
-                 "sold": 0, "written_off": 0,
+                 "sold": 0, "written_off": 0, "archive": 0,
                  "total_purchase": 0.0, "total_sale": 0.0,
                  "sold_revenue": 0.0, "sold_purchase": 0.0, "sold_count": 0,
                  "invested": 0.0, "potential_revenue": 0.0,
@@ -383,6 +383,7 @@ class Database:
                 elif st == "На Avito": s["on_avito"] += 1
                 elif st == "В доставке": s["in_delivery"] += 1
                 elif st == "Продано": s["sold"] += 1
+                elif st == "Архив": s["archive"] += 1
                 elif st == "Списано": s["written_off"] += 1
 
                 purchase = r["purchase_price"] or 0

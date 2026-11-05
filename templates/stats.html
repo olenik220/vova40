@@ -81,6 +81,10 @@
                     <a class="num" style="color:#999; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='Списано') }}">{{ stats.written_off }}</a>
                     <div class="lbl">Списано</div>
                 </div>
+                <div class="stat-item">
+                    <a class="num" style="color:#6d4c41; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='Архив') }}">{{ stats.archive or 0 }}</a>
+                    <div class="lbl">Архив</div>
+                </div>
             </div>
         </div>
 
