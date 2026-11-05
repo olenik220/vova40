@@ -1255,6 +1255,7 @@ AVITO_STATUS_MAP = {
     'unavailable': 'Продано',
     'delivery': 'В доставке',
     'active': 'На Avito',
+    'old': 'Архив',
 }
 
 @app.route('/avito/sync-statuses', methods=['POST'])

@@ -118,6 +118,8 @@
                                 <span class="status-badge badge-delivery">{{ st }}</span>
                             {% elif st == 'Продано' %}
                                 <span class="status-badge badge-sold">{{ st }}</span>
+                            {% elif st == 'Архив' %}
+                                <span class="status-badge badge-writeoff">{{ st }}</span>
                             {% else %}
                                 <span class="status-badge badge-writeoff">{{ st }}</span>
                             {% endif %}

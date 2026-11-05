@@ -327,6 +327,9 @@
                     <button type="button" class="btn btn-sold {{ 'active' if item.status == 'Продано' }}" data-status="Продано">
                         <i class="fa-solid fa-circle-check"></i> Продано
                     </button>
+                    <button type="button" class="btn btn-work {{ 'active' if item.status == 'Архив' }}" data-status="Архив">
+                        <i class="fa-solid fa-box-archive"></i> Архив
+                    </button>
                 </div>
                 <input type="hidden" name="status" id="statusInput" value="">
                 <div id="extraPrice" style="display:none;margin-top:10px;">
