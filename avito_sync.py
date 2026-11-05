@@ -131,7 +131,19 @@ def fetch_avito_status(tok, user_id, avito_id):
     return http(url, {"Authorization": "Bearer " + tok}, timeout=15)
 
 
-def update_status(conn, item_id, status, avito_link=None):
+def update_status(conn, item_id, status, avito_link=None, avito_status=None, avito_finish=None):
+    if avito_status is not None or avito_finish is not None:
+        sets = []
+        vals = []
+        if avito_status is not None:
+            sets.append("avito_status=?"); vals.append(avito_status)
+        if avito_finish is not None:
+            sets.append("avito_finish=?"); vals.append(avito_finish)
+        vals.append(item_id)
+        try:
+            conn.execute("UPDATE items SET " + ", ".join(sets) + " WHERE id=?", vals)
+        except Exception as e:
+            log("#%s: не сохранил статус Авито: %s" % (item_id, e))
     sets = ["status=?", "updated_at=datetime('now','localtime')"]
     vals = [status]
     if status == "Продано":
@@ -180,22 +192,41 @@ def main():
         code, body = fetch_avito_status(tok, user_id, avito_id)
         if code == 200:
             try:
-                avito_status = json.loads(body.decode("utf-8")).get("status", "")
+                data = json.loads(body.decode("utf-8"))
             except Exception:
                 log("#%s: не разобрал ответ API" % it["id"])
                 errors += 1
                 continue
+            avito_status = data.get("status", "")
+            avito_finish = data.get("finish_time", "") or ""
             new_status = AVITO_STATUS_MAP.get(avito_status, "")
+
+            # если API когда-нибудь отдаст срок доставки — подхватим
+            eta = ""
+            for key in ("delivery_date", "deliveryDate", "delivery_eta"):
+                if data.get(key):
+                    eta = str(data.get(key))
+                    break
+            if not eta and isinstance(data.get("delivery"), dict):
+                eta = str(data["delivery"].get("date") or data["delivery"].get("eta") or "")
+
+            if not DRY and (new_status or avito_status):
+                # статус и дату окончания объявления сохраняем всегда
+                update_status(conn, it["id"], new_status or (it["status"] or ""),
+                              avito_status=avito_status, avito_finish=avito_finish)
+                if eta:
+                    conn.execute("UPDATE items SET delivery_eta=? WHERE id=?", (eta, it["id"]))
+
             cur = it["status"] or ""
             if not new_status:
-                log("#%s: неизвестный статус Avito «%s»" % (it["id"], avito_status))
+                log("#%s: неизвестный статус Avito «%s» (сохранён как есть)" % (it["id"], avito_status))
                 continue
             if new_status == cur:
                 continue
             if cur in FINAL and new_status == "На Avito":
                 log("#%s: пропуск отката %s -> На Avito" % (it["id"], cur))
                 continue
-            log("#%s: %s -> %s (Avito: %s)" % (it["id"], cur, new_status, avito_status))
+            log("#%s: %s -> %s (Avito: %s, до %s)" % (it["id"], cur, new_status, avito_status, avito_finish or "-"))
             if not DRY:
                 update_status(conn, it["id"], new_status)
             changed += 1
