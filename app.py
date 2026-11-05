@@ -580,7 +580,7 @@ def export_avito_item(item_id):
     ])
     xml_content = '\n'.join(xml_parts)
 
-    feeds_dir = _os.path.join(config.BASE_PATH, 'static', 'avito_feeds')
+    feeds_dir = _os.path.join(BASE_DIR, 'static', 'avito_feeds')
     _os.makedirs(feeds_dir, exist_ok=True)
     safe_name2 = re.sub(r'[^\w\-]+', '_', title)[:40].strip('_') or str(item_id)
     xml_filename = f"avito_{safe_name2}.xml"
