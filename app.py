@@ -20,6 +20,7 @@ sys.path.insert(0, BASE_DIR)
 from config import config
 from db import db, WAREHOUSES
 from ai_helper import description_gen
+import avito_map
 from sheets import sheets_sync
 from PIL import Image, ImageOps
 try:
@@ -491,52 +492,27 @@ def export_avito_item(item_id):
                 photo_urls.append(purl)
     subcat = (item.get('subcategory') or '').strip()
 
-    # --- Атрибуты из attrs (JSON в БД) ---
-    raw_attrs = item.get('attrs', {})
-    if isinstance(raw_attrs, str):
-        try:
-            raw_attrs = _json.loads(raw_attrs)
-        except Exception:
-            raw_attrs = {}
-    if not isinstance(raw_attrs, dict):
-        raw_attrs = {}
+    # --- Маппинг на справочник Avito (avito_map.py) ---
+    am = avito_map.build(item)
+    avito_cat = am['category']
+    xml_cond = am['condition']
+    goods_type = am['goods_type']
+    color = am['color']
+    material = am['material']
+    season = am['season']
+    extra_attrs = am['extra_attrs']
+    if not brand or brand == 'Неизвестный бренд':
+        brand = am['brand']
+    if am['size']:
+        size = am['size']
 
-    color = (raw_attrs.get('Цвет') or '').strip()
-    material = (raw_attrs.get('Материал', '') or raw_attrs.get('Состав/материал', '') or
-                raw_attrs.get('Материал основной части', '') or raw_attrs.get('Материал верха', '') or '').strip()
-    season = (raw_attrs.get('Сезон') or '').strip()
-    # Остальные атрибуты — как <Attr name="...">...</Attr>
-    ignore_keys = {'Цвет', 'Материал', 'Состав/материал', 'Материал основной части', 'Материал верха', 'Сезон',
-                   'Бренд', 'Размер', 'Состояние', 'Тип', 'Пол', 'Количество предметов в комплекте', 'Вид спорта'}
-    extra_attrs = {}
-    for k, v in raw_attrs.items():
-        if k not in ignore_keys and v and str(v).strip():
-            extra_attrs[k] = str(v).strip()
-
-    cat = item.get('category', '').strip()
-    avito_cat = {
-        'Женская одежда': 'Одежда, обувь, аксессуары',
-        'Мужская одежда': 'Одежда, обувь, аксессуары',
-        'Детская одежда': 'Детская одежда',
-        'Женская обувь': 'Одежда, обувь, аксессуары',
-        'Мужская обувь': 'Одежда, обувь, аксессуары',
-        'Аксессуары': 'Одежда, обувь, аксессуары',
-    }.get(cat, 'Одежда, обувь, аксессуары')
-
-    cond_map = {
-        'Новое с биркой': 'Новое',
-        'Новое': 'Новое',
-        'Хорошее': 'Хорошее',
-        'Удовлетворительное': 'Удовлетворительное',
-    }
-    xml_cond = cond_map.get(condition, 'Хорошее')
 
     xml_id = f"local_{item_id}_{_uuid.uuid4().hex[:8]}"
     safe_title = xmlesc(title)
     safe_desc = xmlesc(desc)
     safe_brand = xmlesc(brand)
     safe_size = xmlesc(size) if size else ''
-    safe_subcat = xmlesc(subcat)
+    safe_subcat = xmlesc(goods_type)
     safe_color = xmlesc(color) if color else ''
     safe_material = xmlesc(material) if material else ''
     safe_season = xmlesc(season) if season else ''
