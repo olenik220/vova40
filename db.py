@@ -157,9 +157,8 @@ class Database:
             sets = ["status=?", "updated_at=datetime('now','localtime')"]
             vals = [status]
             if status == 'Продано':
-                sets.append("sold_at=datetime('now','localtime')")
-            else:
-                sets.append("sold_at=''")
+                # ставим дату только если её ещё нет — при смене статуса не обнуляем
+                sets.append("sold_at=coalesce(nullif(sold_at,''), datetime('now','localtime'))")
             if sale_price is not None:
                 sets.append("sale_price=?")
                 vals.append(sale_price)
@@ -215,6 +214,49 @@ class Database:
             conn.execute("INSERT INTO users (username, password_hash, role) VALUES (?,?,?)",
                          (username, password_hash, role))
             conn.commit()
+        finally:
+            conn.close()
+
+    def list_users(self):
+        conn = self._get_conn()
+        try:
+            return [dict(r) for r in conn.execute(
+                "SELECT id, username, role FROM users ORDER BY id").fetchall()]
+        finally:
+            conn.close()
+
+    def get_user_by_id(self, user_id):
+        conn = self._get_conn()
+        try:
+            row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
+    def set_user_password(self, user_id, password_hash):
+        conn = self._get_conn()
+        try:
+            conn.execute("UPDATE users SET password_hash=? WHERE id=?", (password_hash, user_id))
+            conn.commit()
+            return conn.total_changes > 0
+        finally:
+            conn.close()
+
+    def set_user_role(self, user_id, role):
+        conn = self._get_conn()
+        try:
+            conn.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
+            conn.commit()
+            return conn.total_changes > 0
+        finally:
+            conn.close()
+
+    def delete_user(self, user_id):
+        conn = self._get_conn()
+        try:
+            conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+            conn.commit()
+            return conn.total_changes > 0
         finally:
             conn.close()
 

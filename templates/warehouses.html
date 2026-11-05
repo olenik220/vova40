@@ -40,6 +40,10 @@
 <link rel="stylesheet" href="/static/fontawesome/all.min.css">
 </head>
 <body>
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('users_admin') }}" class="logout" style="right:250px;" title="Пользователи"><i class="fa-solid fa-users"></i></a>
+    {% endif %}
+    <a href="{{ url_for('change_password') }}" class="logout" style="right:210px;" title="Сменить пароль"><i class="fa-solid fa-key"></i></a>
     <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-right-from-bracket"></i> {{ current_user.username or "Выйти" }} · Выйти</a>
     <div class="content">
         {% with messages = get_flashed_messages(with_categories=true) %}

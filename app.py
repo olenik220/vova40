@@ -304,6 +304,100 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
+# ───── ПОЛЬЗОВАТЕЛИ ─────
+@app.route('/users', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def users_admin():
+    """Управление пользователями (только админ)."""
+    if request.method == 'POST':
+        uname = (request.form.get('username') or '').strip()
+        pwd = request.form.get('password') or ''
+        role = request.form.get('role') or 'worker'
+        if role not in ('admin', 'worker'):
+            role = 'worker'
+        if not uname:
+            flash('Укажите логин', 'danger')
+        elif uname.lower() == 'admin':
+            flash('Логин «admin» зарезервирован: это пароль из настроек сервера', 'danger')
+        elif len(pwd) < 6:
+            flash('Пароль должен быть не короче 6 символов', 'danger')
+        elif db.get_user(uname):
+            flash('Такой логин уже существует', 'danger')
+        else:
+            db.add_user(uname, generate_password_hash(pwd), role)
+            flash(f'Пользователь «{uname}» создан ({role})', 'success')
+        return redirect(url_for('users_admin'))
+    return render_template('users.html', users=db.list_users())
+
+
+@app.route('/users/<int:user_id>/password', methods=['POST'])
+@login_required
+@admin_required
+def users_reset_password(user_id):
+    pwd = request.form.get('password') or ''
+    u = db.get_user_by_id(user_id)
+    if not u:
+        flash('Пользователь не найден', 'danger')
+    elif len(pwd) < 6:
+        flash('Пароль должен быть не короче 6 символов', 'danger')
+    else:
+        db.set_user_password(user_id, generate_password_hash(pwd))
+        flash(f'Пароль пользователя «{u["username"]}» изменён', 'success')
+    return redirect(url_for('users_admin'))
+
+
+@app.route('/users/<int:user_id>/role', methods=['POST'])
+@login_required
+@admin_required
+def users_set_role(user_id):
+    role = request.form.get('role') or 'worker'
+    if role not in ('admin', 'worker'):
+        role = 'worker'
+    db.set_user_role(user_id, role)
+    flash('Роль обновлена', 'success')
+    return redirect(url_for('users_admin'))
+
+
+@app.route('/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def users_delete(user_id):
+    u = db.get_user_by_id(user_id)
+    cur = (session.get('user') or {}).get('username', '')
+    if u and u['username'] == cur:
+        flash('Нельзя удалить самого себя', 'danger')
+    elif u:
+        db.delete_user(user_id)
+        flash(f'Пользователь «{u["username"]}» удалён', 'success')
+    return redirect(url_for('users_admin'))
+
+
+@app.route('/profile/password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """Смена своего пароля (для пользователей из базы)."""
+    cur_name = (session.get('user') or {}).get('username', '')
+    u = db.get_user(cur_name) if cur_name and cur_name != 'admin' else None
+    if request.method == 'POST':
+        old = request.form.get('old_password') or ''
+        new1 = request.form.get('new_password') or ''
+        new2 = request.form.get('new_password2') or ''
+        if not u:
+            flash('Пароль администратора меняется только в файле настроек на сервере', 'danger')
+        elif not check_password_hash(u['password_hash'], old):
+            flash('Старый пароль указан неверно', 'danger')
+        elif len(new1) < 6:
+            flash('Новый пароль должен быть не короче 6 символов', 'danger')
+        elif new1 != new2:
+            flash('Новые пароли не совпадают', 'danger')
+        else:
+            db.set_user_password(u['id'], generate_password_hash(new1))
+            flash('Пароль изменён', 'success')
+            return redirect(url_for('warehouse_choice'))
+    return render_template('change_password.html', db_user=bool(u))
+
+
 # ───── ВЫБОР СКЛАДА ─────
 @app.route('/')
 @login_required
