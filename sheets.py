@@ -126,7 +126,7 @@ class GoogleSheetsSync:
                 item.get("condition", ""),
                 str(item.get("purchase_price", 0)),
                 str(item.get("sale_price", 0)),
-                item.get("status", "В наличии"),
+                item.get("status", "В работе"),
                 item.get("photo_file_id", ""),
                 item.get("description", ""),
                 item.get("avito_link", ""),

@@ -225,7 +225,7 @@
             <h1>{{ item.title or (item.brand + ' ' + (item.size or ''))|trim or 'Товар #' + item.id|string }}</h1>
             <div class="meta">
                 <span>{{ item.condition or '' }}</span>
-                <span>{{ item.status or 'В наличии' }}</span>
+                <span>{{ item.status or 'В работе' }}</span>
                 {% if item.size and item.size != 'Не указан' %}
                     <span>• {{ item.size }}</span>
                 {% endif %}
@@ -328,8 +328,8 @@
                     <button type="button" class="btn btn-work {{ 'active' if item.status == 'В закупке' }}" data-status="В закупке">
                         <i class="fa-solid fa-wrench"></i> В закупке
                     </button>
-                    <button type="button" class="btn btn-stock {{ 'active' if item.status == 'В наличии' }}" data-status="В наличии">
-                        <i class="fa-solid fa-check"></i> В наличии
+                    <button type="button" class="btn btn-stock {{ 'active' if item.status == 'В работе' }}" data-status="В работе">
+                        <i class="fa-solid fa-check"></i> В работе
                     </button>
                     <button type="button" class="btn btn-avito {{ 'active' if item.status == 'На Avito' }}" data-status="На Avito">
                         <i class="fa-solid fa-arrow-right-to-bracket"></i> На Avito

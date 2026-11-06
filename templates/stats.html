@@ -62,8 +62,8 @@
                     <div class="lbl">В закупке</div>
                 </div>
                 <div class="stat-item">
-                    <a class="num" style="color:#2e7d32; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='В наличии') }}">{{ stats.in_stock }}</a>
-                    <div class="lbl">В наличии</div>
+                    <a class="num" style="color:#2e7d32; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='В работе') }}">{{ stats.in_stock }}</a>
+                    <div class="lbl">В работе</div>
                 </div>
                 <div class="stat-item">
                     <a class="num" style="color:#1565c0; text-decoration:none;" href="{{ url_for('warehouse_items', wh_id=wh_id, status='На Avito') }}">{{ stats.on_avito }}</a>
@@ -164,7 +164,7 @@
                 <span class="val">{{ stats.invested|int }} ₽</span>
             </div>
             <div class="stat-line">
-                <span class="lbl">Ожидаемая выручка (В наличии + Avito + доставка)</span>
+                <span class="lbl">Ожидаемая выручка (В работе + Avito + доставка)</span>
                 <span class="val">{{ stats.potential_revenue|int }} ₽</span>
             </div>
             <div class="stat-line">

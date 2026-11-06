@@ -76,7 +76,7 @@
                     {% if fp %}<img class="ph" src="{{ fp }}">{% else %}<div class="ph" style="display:flex;align-items:center;justify-content:center;font-size:24px;"><i class="fa-solid fa-shirt"></i></div>{% endif %}
                     <div class="info">
                         <div class="brand">{{ item.title or item.brand or "?" }}
-                            {% if item.status == "В наличии" %}<span class="badge badge-stock">✓</span>
+                            {% if item.status == "В работе" %}<span class="badge badge-stock">✓</span>
                             {% elif item.status == "В закупке" %}<span class="badge badge-work"><i class="fa-solid fa-wrench"></i></span>
                             {% elif item.status == "На Avito" %}<span class="badge badge-avito">Avito</span>
                             {% elif item.status == "В доставке" %}<span class="badge badge-delivery"><i class="fa-solid fa-truck"></i></span>

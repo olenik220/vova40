@@ -285,7 +285,7 @@ class Database:
                 vals.append(category)
             if status:
                 if status == 'Другое':
-                    conds.append("status NOT IN ('В закупке','В наличии','На Avito','В доставке','Продано')")
+                    conds.append("status NOT IN ('В закупке','В работе','На Avito','В доставке','Продано')")
                 else:
                     conds.append("status=?")
                     vals.append(status)
@@ -378,7 +378,7 @@ class Database:
             for r in conn.execute(q, p).fetchall():
                 s["total"] += 1
                 st = r["status"] or ""
-                if st == "В наличии": s["in_stock"] += 1
+                if st == "В работе": s["in_stock"] += 1
                 elif st == "В закупке": s["in_work"] += 1
                 elif st == "На Avito": s["on_avito"] += 1
                 elif st == "В доставке": s["in_delivery"] += 1
@@ -412,7 +412,7 @@ class Database:
                 # заморожено в товарах (закупка всего, что не продано и не списано)
                 if st not in ("Продано", "Списано"):
                     s["invested"] += purchase
-                    if st in ("В наличии", "На Avito", "В доставке"):
+                    if st in ("В работе", "На Avito", "В доставке"):
                         s["potential_revenue"] += sale
 
                 # автор: сколько товаров добавил за выбранный период

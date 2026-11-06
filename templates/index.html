@@ -85,7 +85,7 @@
             </div>
             <div class="stat">
                 <div>{{ stats.in_stock }}</div>
-                <div>В наличии</div>
+                <div>В работе</div>
             </div>
             <div class="stat">
                 <div>{{ stats.on_avito }}</div>
@@ -109,7 +109,7 @@
                     <div class="info">
                         <div class="brand">{{ item.brand or '?' }}
                             {% set st = item.status %}
-                            {% if st == 'В наличии' %}
+                            {% if st == 'В работе' %}
                                 <span class="status-badge badge-stock">{{ st }}</span>
                             {% elif st == 'В закупке' %}
                                 <span class="status-badge badge-work">{{ st }}</span>

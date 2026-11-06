@@ -85,7 +85,7 @@
                 <a class="card" href="{{ url_for('item_card', item_id=item.id) }}">
                     <div class="photo-wrap">
                         {% if fp %}<img src="{{ fp }}" loading="lazy">{% else %}<div class="no-photo"><i class="fa-solid fa-shirt"></i></div>{% endif %}
-                        {% if item.status == "В наличии" %}<span class="badge badge-stock">✓</span>
+                        {% if item.status == "В работе" %}<span class="badge badge-stock">✓</span>
                         {% elif item.status == "В закупке" %}<span class="badge badge-work"><i class="fa-solid fa-wrench"></i></span>
                         {% elif item.status == "На Avito" %}<span class="badge badge-avito">Avito</span>
                         {% elif item.status == "В доставке" %}<span class="badge badge-delivery"><i class="fa-solid fa-truck"></i></span>
