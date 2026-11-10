@@ -1,5 +1,6 @@
 """Маппинг данных приложения Vova40 -> Avito Автозагрузка (format v3)."""
 import re
+import avito_enums
 
 CATEGORY_MAP = {
     "Женская одежда": "Одежда, обувь, аксессуары",
@@ -198,7 +199,7 @@ def build(item):
     size_raw = (item.get("size") or "").strip()
     if _norm(size_raw) in ("не указан", ""):
         size_raw = ""
-    size = normalize_size(size_raw or attrs.get("Размер", ""))
+    size = avito_enums.normalize_size(size_raw or attrs.get("Размер", "")) or normalize_size(size_raw or attrs.get("Размер", ""))
 
     color = (str(item.get("color") or "").strip()
              or str(attrs.get("Цвет") or "").strip())
@@ -216,9 +217,26 @@ def build(item):
             continue
         extra[EXTRA_ATTR_NAMES.get(key, k)] = str(v).strip()
 
+    # новая схема Авито: GoodsType — верхний уровень (Мужская одежда),
+    # Apparel — тип товара (Верхняя одежда), ApparelType — вид (Лёгкие куртки и ветровки)
+    subcategory = (item.get("subcategory") or "").strip()
+    goods_type_top = avito_enums.GOODS_TYPE_BY_CATEGORY.get(category)
+    apparel, apparel_type, apparel_confirmed = avito_enums.apparel_for(subcategory)
+    if goods_type_top:
+        goods_type_value = goods_type_top
+    else:
+        goods_type_value = pick_goods_type(category, subcategory, attrs, item.get("title"))
+    color = avito_enums.normalize_color(color) or color
+
     return {
         "category": avito_cat,
-        "goods_type": pick_goods_type(category, item.get("subcategory"), attrs, item.get("title")),
+        "goods_type": goods_type_value,
+        "apparel": apparel,
+        "apparel_type": apparel_type,
+        "apparel_confirmed": apparel_confirmed,
+        "ad_type": avito_enums.DEFAULT_AD_TYPE,
+        "country": (str(item.get("country") or "").strip()
+                    or str(attrs.get("Страна происхождения товара") or "").strip()),
         "condition": condition,
         "size": size,
         "size_raw": size_raw,

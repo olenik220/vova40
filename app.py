@@ -595,6 +595,10 @@ def export_avito_item(item_id):
     avito_cat = am['category']
     xml_cond = am['condition']
     goods_type = am['goods_type']
+    apparel = am.get('apparel', '')
+    apparel_type = am.get('apparel_type', '')
+    ad_type = am.get('ad_type', '')
+    country_am = am.get('country', '')
     color = am['color']
     material = am['material']
     season = am['season']
@@ -630,6 +634,12 @@ def export_avito_item(item_id):
     ]
     if safe_subcat:
         xml_parts.append(f'    <GoodsType>{safe_subcat}</GoodsType>')
+    if apparel:
+        xml_parts.append(f'    <Apparel>{xmlesc(apparel)}</Apparel>')
+    if apparel_type:
+        xml_parts.append(f'    <ApparelType>{xmlesc(apparel_type)}</ApparelType>')
+    if ad_type:
+        xml_parts.append(f'    <AdType>{xmlesc(ad_type)}</AdType>')
     xml_parts.extend([
         f'    <Title>{safe_title}</Title>',
         f'    <Description>{safe_desc}</Description>',
@@ -647,8 +657,9 @@ def export_avito_item(item_id):
         xml_parts.append(f'    <Material>{safe_material}</Material>')
     if safe_season:
         xml_parts.append(f'    <SeasonName>{safe_season}</SeasonName>')
+    country_val = country_val or country_am
     if country_val:
-        xml_parts.append(f'    <Attr name="Страна происхождения товара">{xmlesc(country_val)}</Attr>')
+        xml_parts.append(f'    <CountryOfOrigin>{xmlesc(country_val)}</CountryOfOrigin>')
     for _ek, _ev in extra_attrs.items():
         xml_parts.append(f'    <Attr name="{xmlesc(_ek)}">{xmlesc(_ev)}</Attr>')
     if photo_urls:
