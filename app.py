@@ -609,6 +609,9 @@ def export_avito_item(item_id):
     xml_id = article_val if article_val else f"vova40_{item_id}"
     city_val = (item.get('city') or '').strip() or config.DEFAULT_CITY
     country_val = (item.get('country') or '').strip() or config.DEFAULT_COUNTRY
+    # лимиты Авито: название до 50 символов, описание до 7 500
+    title = title[:50].strip()
+    desc = desc[:7500].strip()
     safe_title = xmlesc(title)
     safe_desc = xmlesc(desc)
     safe_brand = xmlesc(brand)

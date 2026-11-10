@@ -79,13 +79,30 @@ ITEM_TO_GOODS_TYPE = {
     "hat": "Головные уборы", "cap": "Головные уборы",
 }
 
-CONDITION_MAP = {
-    "новое с биркой": "Новое", "новое": "Новое",
-    "б/у как новое": "Как новое", "отличное": "Как новое",
-    "хорошее": "Хорошее", "б/у": "Хорошее",
-    "удовлетворительное": "Удовлетворительное",
+# Состояние в Авито зависит от категории:
+#  - одежда/обувь/аксессуары: «Новое с биркой», «Отличное», «Хорошее», «Удовлетворительное»
+#  - остальные категории: «Новое» или «Б/у»
+CLOTHING_CATEGORIES = {"Одежда, обувь, аксессуары"}
+CONDITION_MAP_CLOTHING = {
+    "новое с биркой": "Новое с биркой", "новое": "Новое с биркой",
+    "б/у как новое": "Отличное", "отличное": "Отличное",
+    "хорошее": "Хорошее", "удовлетворительное": "Удовлетворительное",
 }
+CONDITION_MAP_OTHER = {
+    "новое с биркой": "Новое", "новое": "Новое",
+    "б/у как новое": "Б/у", "отличное": "Б/у", "хорошее": "Б/у",
+    "удовлетворительное": "Б/у",
+}
+# совместимость со старым кодом
+CONDITION_MAP = CONDITION_MAP_CLOTHING
 DEFAULT_CONDITION = "Хорошее"
+
+
+def map_condition(condition, avito_category):
+    """Приводит состояние приложения к допустимому значению Авито для категории."""
+    key = _norm(condition)
+    table = CONDITION_MAP_CLOTHING if avito_category in CLOTHING_CATEGORIES else CONDITION_MAP_OTHER
+    return table.get(key, "Хорошее" if avito_category in CLOTHING_CATEGORIES else "Б/у")
 
 SEASON_MAP = {
     "любой": "Всесезон", "всесезон": "Всесезон", "всесезонный": "Всесезон",
@@ -176,7 +193,7 @@ def build(item):
     category = (item.get("category") or "").strip()
     avito_cat = CATEGORY_MAP.get(category, DEFAULT_CATEGORY)
 
-    condition = CONDITION_MAP.get(_norm(item.get("condition")), DEFAULT_CONDITION)
+    condition = map_condition(item.get("condition"), avito_cat)
 
     size_raw = (item.get("size") or "").strip()
     if _norm(size_raw) in ("не указан", ""):
