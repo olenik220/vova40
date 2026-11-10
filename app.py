@@ -569,6 +569,11 @@ def export_avito_item(item_id):
             flash(f'Ошибка: {e}', 'danger')
             return redirect(url_for('item_card', item_id=item_id))
 
+    # Авито не принимает объявление без цены — проверяем до формирования фида
+    if sale_price <= 0:
+        flash('Укажи цену продажи: без неё Авито объявление не примет', 'danger')
+        return redirect(url_for('item_card', item_id=item_id))
+
     # --- 2. Нет avito_link — формируем XML Автозагрузки ---
     from xml.sax.saxutils import escape as xmlesc
     import os as _os, uuid as _uuid, json as _json
@@ -611,6 +616,14 @@ def export_avito_item(item_id):
 
     article_val = (item.get('article') or '').strip()
     xml_id = article_val if article_val else f"vova40_{item_id}"
+    # AvitoId — номер объявления на Авито. Заполняется, если товар там уже размещён:
+    # по паре Id+AvitoId Авито обновляет объявление, а не создаёт дубль.
+    _m = re.search(r'_(\d{6,})$', avito_link or '')
+    avito_id_val = _m.group(1) if _m else ''
+    if avito_id_val:
+        xml_parts_avito_id = f'    <AvitoId>{avito_id_val}</AvitoId>'
+    else:
+        xml_parts_avito_id = ''
     city_val = (item.get('city') or '').strip() or config.DEFAULT_CITY
     country_val = (item.get('country') or '').strip() or config.DEFAULT_COUNTRY
     # лимиты Авито: название до 50 символов, описание до 7 500
@@ -630,8 +643,12 @@ def export_avito_item(item_id):
         f'<Ads formatVersion="3" target="Avito.ru">',
         f'  <Ad>',
         f'    <Id>{xml_id}</Id>',
-        f'    <Category>{avito_cat}</Category>',
     ]
+    if xml_parts_avito_id:
+        xml_parts.append(xml_parts_avito_id)
+    xml_parts.extend([
+        f'    <Category>{avito_cat}</Category>',
+    ])
     if safe_subcat:
         xml_parts.append(f'    <GoodsType>{safe_subcat}</GoodsType>')
     if apparel:
