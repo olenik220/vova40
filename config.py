@@ -191,6 +191,9 @@ class Config:
     ]
 
     STATUSES = ["В закупке", "В работе", "На Avito", "В доставке", "Продано", "Архив", "Списано"]
+    SEASONS = ["Всесезон", "Лето", "Зима", "Демисезон"]
+    DEFAULT_COUNTRY = os.getenv("DEFAULT_COUNTRY", "Россия")
+    DEFAULT_CITY = os.getenv("DEFAULT_CITY", "Москва")
 
     # ---- Свойства-помощники ----
 

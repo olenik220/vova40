@@ -301,6 +301,30 @@
                     <td style="padding:6px 0;text-align:right;font-weight:600;">#{{ item.id }}</td></tr>
                 <tr><td style="padding:6px 0;color:#888;">Добавлен</td>
                     <td style="padding:6px 0;text-align:right;">{{ item.created_at or '?' }}</td></tr>
+                {% if item.article %}
+                <tr><td style="padding:6px 0;color:#888;">Артикул</td>
+                    <td style="padding:6px 0;text-align:right;font-weight:600;">{{ item.article }}</td></tr>
+                {% endif %}
+                {% if item.color %}
+                <tr><td style="padding:6px 0;color:#888;">Цвет</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.color }}</td></tr>
+                {% endif %}
+                {% if item.material %}
+                <tr><td style="padding:6px 0;color:#888;">Материал</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.material }}</td></tr>
+                {% endif %}
+                {% if item.season %}
+                <tr><td style="padding:6px 0;color:#888;">Сезон</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.season }}</td></tr>
+                {% endif %}
+                {% if item.country %}
+                <tr><td style="padding:6px 0;color:#888;">Страна</td>
+                    <td style="padding:6px 0;text-align:right;">{{ item.country }}</td></tr>
+                {% endif %}
+                {% if item.city %}
+                <tr><td style="padding:6px 0;color:#888;">Город размещения</td>
+                    <td style="padding:6px 0;text-align:right;font-weight:600;">{{ item.city }}</td></tr>
+                {% endif %}
                 {% if item.sold_at %}
                 <tr><td style="padding:6px 0;color:#888;">Дата продажи</td>
                     <td style="padding:6px 0;text-align:right;font-weight:600;">{{ item.sold_at }}</td></tr>

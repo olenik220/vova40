@@ -183,10 +183,13 @@ def build(item):
         size_raw = ""
     size = normalize_size(size_raw or attrs.get("Размер", ""))
 
-    color = str(attrs.get("Цвет") or "").strip()
-    material = str(attrs.get("Материал основной части") or attrs.get("Состав/материал")
-                   or attrs.get("Материал") or attrs.get("Материал верха") or "").strip()
-    season_raw = str(attrs.get("Сезон") or "").strip()
+    color = (str(item.get("color") or "").strip()
+             or str(attrs.get("Цвет") or "").strip())
+    material = (str(item.get("material") or "").strip()
+                or str(attrs.get("Материал основной части") or attrs.get("Состав/материал")
+                       or attrs.get("Материал") or attrs.get("Материал верха") or "").strip())
+    season_raw = (str(item.get("season") or "").strip()
+                  or str(attrs.get("Сезон") or "").strip())
     season = SEASON_MAP.get(_norm(season_raw), season_raw)
 
     extra = {}

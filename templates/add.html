@@ -201,9 +201,38 @@
                     <div class="hint">Можно пропустить</div>
                 </div>
 
+                <div class="field">
+                    <label>Цвет</label>
+                    <input type="text" name="color" placeholder="Чёрный, хаки...">
+                </div>
+
+                <div class="field">
+                    <label>Материал</label>
+                    <input type="text" name="material" placeholder="Хлопок, полиэстер...">
+                </div>
+
+                <div class="field">
+                    <label>Сезон</label>
+                    <select name="season">
+                        <option value="">— не указан —</option>
+                        {% for sn in seasons %}<option value="{{ sn }}">{{ sn }}</option>{% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Страна происхождения</label>
+                    <input type="text" name="country" value="{{ default_country }}">
+                </div>
+
+                <div class="field">
+                    <label>Город размещения</label>
+                    <input type="text" name="city" value="{{ default_city }}">
+                    <div class="hint">Город, в котором публикуется объявление на Авито</div>
+                </div>
+
                 <!-- Динамические атрибуты категории -->
                 {% for aname in attrs %}
-                    {% if aname not in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)') %}
+                    {% if aname not in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)', 'Цвет', 'Состав/материал', 'Материал верха', 'Материал', 'Сезон', 'Страна происхождения товара') %}
                     <div class="field">
                         <label>{{ aname }}</label>
                         <input type="text" name="av_{{ loop.index0 }}" placeholder="{{ aname }}">

@@ -94,6 +94,11 @@ class Database:
                     conn.execute(f"ALTER TABLE items ADD COLUMN {_col} {_type}")
                 except Exception:
                     pass
+            for _col in ('color', 'material', 'season', 'country', 'city'):
+                try:
+                    conn.execute(f"ALTER TABLE items ADD COLUMN {_col} TEXT DEFAULT ''")
+                except Exception:
+                    pass
             conn.commit()
         except Exception as e:
             logger.error(f"DB init: {e}")
@@ -105,7 +110,8 @@ class Database:
                  subcategory="", attrs=None, brand="",
                  size="", condition="Хорошее", purchase_price=0, sale_price=0,
                  photos=None, tech_photos=None, description="", note="", title="",
-                 created_by="", supplier=""):
+                 created_by="", supplier="", color="", material="", season="",
+                 country="", city=""):
         if photos is None:
             photos = []
         if tech_photos is None:
@@ -121,11 +127,13 @@ class Database:
                 attrs_json = str(attrs)
             cur = conn.execute(
                 """INSERT INTO items (warehouse,article,category,subcategory,brand,size,condition,
-                   purchase_price,sale_price,photos,tech_photos,description,note,status,attrs,title,created_by,supplier)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'В закупке',?,?,?,?)""",
+                   purchase_price,sale_price,photos,tech_photos,description,note,status,attrs,title,created_by,supplier,
+                   color,material,season,country,city)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'В закупке',?,?,?,?,?,?,?,?,?)""",
                 (warehouse, article, category, subcategory, brand, size, condition,
                  purchase_price, sale_price, ",".join(photos), ",".join(tech_photos),
-                 description, note, attrs_json, title, created_by, supplier))
+                 description, note, attrs_json, title, created_by, supplier,
+                 color, material, season, country, city))
             conn.commit()
             return cur.lastrowid
         except Exception as e:
@@ -136,7 +144,8 @@ class Database:
 
     def update_item(self, item_id, **kw):
         allowed = {"warehouse","article","category","subcategory","brand","size","condition",
-                    "purchase_price","sale_price","description","avito_link","note","photos","tech_photos","attrs","title","supplier"}
+                    "purchase_price","sale_price","description","avito_link","note","photos","tech_photos","attrs","title","supplier",
+                    "color","material","season","country","city"}
         up = {k: v for k, v in kw.items() if k in allowed}
         if "attrs" in up and isinstance(up["attrs"], dict):
             import json as _j

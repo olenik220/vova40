@@ -218,12 +218,43 @@
                     <input type="text" name="article" value="{{ item.article or '' }}" placeholder="Артикул">
                 </div>
 
+                <div class="field">
+                    <label>Цвет</label>
+                    <input type="text" name="color" value="{{ item.color or '' }}" placeholder="Чёрный, хаки...">
+                </div>
+
+                <div class="field">
+                    <label>Материал</label>
+                    <input type="text" name="material" value="{{ item.material or '' }}" placeholder="Хлопок, полиэстер...">
+                </div>
+
+                <div class="field">
+                    <label>Сезон</label>
+                    <select name="season">
+                        <option value="">— не указан —</option>
+                        {% for sn in seasons %}
+                            <option value="{{ sn }}" {{ 'selected' if item.season == sn }}>{{ sn }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Страна происхождения</label>
+                    <input type="text" name="country" value="{{ item.country or default_country }}">
+                </div>
+
+                <div class="field">
+                    <label>Город размещения</label>
+                    <input type="text" name="city" value="{{ item.city or default_city }}">
+                    <div class="hint">Город, в котором публикуется объявление на Авито</div>
+                </div>
+
                 <!-- Динамические атрибуты категории -->
                 {% set cat_info = avito_cats.get(item.category) %}
                 {% if cat_info %}
                 {% set ns = namespace(idx=0) %}
                 {% for aname in cat_info['attrs'] %}
-                    {% if aname not in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)') %}
+                    {% if aname not in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)', 'Цвет', 'Состав/материал', 'Материал верха', 'Материал', 'Сезон', 'Страна происхождения товара') %}
                     {% set attr_val = attrs_dict.get(aname, '') %}
                     <div class="field">
                         <label>{{ aname }}</label>

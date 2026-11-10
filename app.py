@@ -18,6 +18,10 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 sys.path.insert(0, BASE_DIR)
 
 from config import config
+
+# характеристики, у которых есть отдельные поля в карточке (не дублируем в attrs)
+EXPLICIT_ATTR_NAMES = {"Цвет", "Состав/материал", "Материал верха", "Материал",
+                       "Сезон", "Страна происхождения товара", "Город", "Адрес"}
 from db import db, WAREHOUSES
 from ai_helper import description_gen
 import avito_map
@@ -601,7 +605,10 @@ def export_avito_item(item_id):
         size = am['size']
 
 
-    xml_id = f"local_{item_id}_{_uuid.uuid4().hex[:8]}"
+    article_val = (item.get('article') or '').strip()
+    xml_id = article_val if article_val else f"vova40_{item_id}"
+    city_val = (item.get('city') or '').strip() or config.DEFAULT_CITY
+    country_val = (item.get('country') or '').strip() or config.DEFAULT_COUNTRY
     safe_title = xmlesc(title)
     safe_desc = xmlesc(desc)
     safe_brand = xmlesc(brand)
@@ -625,6 +632,7 @@ def export_avito_item(item_id):
         f'    <Description>{safe_desc}</Description>',
         f'    <Price>{int(sale_price)}</Price>',
         f'    <Currency>RUR</Currency>',
+        f'    <Address>{xmlesc(city_val)}</Address>',
         f'    <Condition>{xml_cond}</Condition>',
         f'    <Brand>{safe_brand}</Brand>',
     ])
@@ -636,6 +644,8 @@ def export_avito_item(item_id):
         xml_parts.append(f'    <Material>{safe_material}</Material>')
     if safe_season:
         xml_parts.append(f'    <SeasonName>{safe_season}</SeasonName>')
+    if country_val:
+        xml_parts.append(f'    <Attr name="Страна происхождения товара">{xmlesc(country_val)}</Attr>')
     for _ek, _ev in extra_attrs.items():
         xml_parts.append(f'    <Attr name="{xmlesc(_ek)}">{xmlesc(_ev)}</Attr>')
     if photo_urls:
@@ -762,7 +772,8 @@ def choose_category(wh_id):
         return render_template('add.html',
             wh_id=wh_id, category=category, subcategory=subcategory,
             attrs=cat_info['attrs'], avatar_cats=config.AVITO_CATEGORIES,
-            conditions=config.CONDITIONS)
+            conditions=config.CONDITIONS, seasons=config.SEASONS,
+            default_city=config.DEFAULT_CITY, default_country=config.DEFAULT_COUNTRY)
     return render_template('choose_category.html',
         wh_id=wh_id, wh_name=db.get_warehouse_name(wh_id), avito_cats=config.AVITO_CATEGORIES)
 
@@ -790,13 +801,19 @@ def add_item(wh_id):
         supplier = request.form.get('supplier', '').strip()
         if supplier == 'Другое':
             supplier = request.form.get('supplier_custom', '').strip() or 'Другое'
+        color = request.form.get('color', '').strip()
+        material = request.form.get('material', '').strip()
+        season = request.form.get('season', '').strip()
+        country = request.form.get('country', '').strip() or config.DEFAULT_COUNTRY
+        city = request.form.get('city', '').strip() or config.DEFAULT_CITY
         # собираем характеристики (attrs) — атрибуты категории, не вошедшие в отдельные поля
         cat_info = config.AVITO_CATEGORIES.get(category)
         attrs = {}
         if cat_info:
             for idx, aname in enumerate(cat_info['attrs']):
-                if aname in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)'):
-                    continue  # эти уже сохранены в condition / brand / size
+                if aname in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)') or \
+                        aname in EXPLICIT_ATTR_NAMES:
+                    continue  # сохранены в отдельные поля карточки
                 v = request.form.get(f'av_{idx}', '').strip()
                 if v:
                     attrs[aname] = v
@@ -842,7 +859,8 @@ def add_item(wh_id):
             size=size, condition=condition, purchase_price=purchase_price,
             sale_price=sale_price, photos=photos, tech_photos=tech_photos,
             description=desc, note=note, title=title, created_by=item_author,
-            supplier=supplier)
+            supplier=supplier, color=color, material=material, season=season,
+            country=country, city=city)
         flash(f'Товар #{item_id} добавлен!', 'success')
         return redirect(url_for('warehouse_items', wh_id=wh_id))
 
@@ -893,7 +911,8 @@ def edit_item(item_id):
             item=item, wh_name=wh_name, photos=photos,
             categories=config.CATEGORIES, conditions=config.CONDITIONS,
             warehouses=WAREHOUSES, avito_cats=config.AVITO_CATEGORIES,
-            attrs_dict=attrs_dict)
+            attrs_dict=attrs_dict, seasons=config.SEASONS,
+            default_city=config.DEFAULT_CITY, default_country=config.DEFAULT_COUNTRY)
 
     # POST — сохранить изменения
     brand = request.form.get('brand', '').strip() or 'Неизвестный бренд'
@@ -915,13 +934,19 @@ def edit_item(item_id):
     category = request.form.get('category', '').strip()
     subcategory = request.form.get('subcategory', '').strip()
     note = request.form.get('note', '').strip()
+    color = request.form.get('color', '').strip()
+    material = request.form.get('material', '').strip()
+    season = request.form.get('season', '').strip()
+    country = request.form.get('country', '').strip()
+    city = request.form.get('city', '').strip()
 
     # attrs — динамические характеристики категории
     cat_info = config.AVITO_CATEGORIES.get(category)
     attrs = {}
     if cat_info:
         for idx, aname in enumerate(cat_info['attrs']):
-            if aname in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)'):
+            if aname in ('Состояние', 'Бренд', 'Размер', 'Размер (RU)') or \
+                    aname in EXPLICIT_ATTR_NAMES:
                 continue
             v = request.form.get(f'av_{idx}', '').strip()
             if v:
@@ -982,6 +1007,7 @@ def edit_item(item_id):
               description=description, avito_link=avito_link,
               title=title, category=category, subcategory=subcategory,
               note=note, attrs=attrs, supplier=supplier,
+              color=color, material=material, season=season, country=country, city=city,
               photos=",".join(photos),
               tech_photos=",".join(tech_photos))
     db.update_item(item_id, **kw)
