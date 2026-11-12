@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vova40 — Фид Авито</title>
+    <link rel="stylesheet" href="/static/fontawesome/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+               background: #f5f5f5; color: #333; padding: 16px 16px 40px; }
+        .top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .top a { text-decoration: none; color: #333; font-size: 20px; }
+        h1 { font-size: 20px; font-weight: 600; }
+        .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px;
+                box-shadow: 0 1px 3px rgba(0,0,0,.06); max-width: 900px; }
+        .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f2f2f2; font-size: 14px; }
+        .row:last-child { border-bottom: none; }
+        .row b { font-weight: 700; }
+        .url { font-family: ui-monospace, Consolas, monospace; font-size: 13px; word-break: break-all;
+               background: #f7f7f7; border-radius: 8px; padding: 10px; margin-top: 8px; display: block; color: #1565c0; }
+        .btn { display: inline-block; padding: 10px 16px; border: none; border-radius: 8px; background: #1565c0;
+               color: #fff; font-size: 14px; cursor: pointer; text-decoration: none; }
+        .btn.gray { background: #eceff1; color: #37474f; }
+        .bad { color: #c62828; font-weight: 600; }
+        .good { color: #2e7d32; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid #f2f2f2; vertical-align: top; }
+        th { color: #888; font-weight: 500; font-size: 12px; }
+        .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; background: #e8f5e9; color: #2e7d32; }
+        .hint { font-size: 12px; color: #888; line-height: 1.5; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <a href="{{ url_for('warehouse_choice') }}"><i class="fa-solid fa-arrow-left"></i></a>
+        <h1>Фид автозагрузки Авито</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="card" style="border-left:4px solid #c62828;">
+        <b style="color:#c62828;">Перед первым включением проверь состав фида</b>
+        <div class="hint" style="color:#555;">Авито считает файл полным списком: всё, чего в нём нет, уйдёт в архив.
+            Нельзя включать загрузку по ссылке, пока в приложении нет всех объявлений, которые должны остаться на Авито.</div>
+    </div>
+
+    <div class="card">
+        <div class="row"><span>Собран</span><b>{{ stats.generated_at }}</b></div>
+        <div class="row"><span>Активных товаров в базе</span><b>{{ stats.total_in_db }}</b></div>
+        <div class="row"><span>Объявлений в фиде</span><b class="good">{{ stats.in_feed }}</b></div>
+        <div class="row"><span>Пропущено</span>
+            <b class="{{ 'bad' if stats.skipped else 'good' }}">{{ stats.skipped|length }}</b></div>
+        <div class="row"><span>Статусы в фиде</span><b>{{ stats.statuses|join(', ') }}</b></div>
+
+        <span class="url">{{ feed_url }}</span>
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn gray" href="{{ feed_url }}" target="_blank"><i class="fa-solid fa-download"></i> Открыть XML</a>
+            <form method="post" action="{{ url_for('avito_feed_rebuild') }}" style="margin:0;">
+                <button class="btn" type="submit"><i class="fa-solid fa-rotate"></i> Пересобрать фид</button>
+            </form>
+        </div>
+        <div class="hint">Эту ссылку нужно вставить в кабинете Авито: Автозагрузка → Настройки → Настроить загрузку по ссылке.
+            Фид пересобирается автоматически каждые 15 минут.</div>
+    </div>
+
+    {% if stats.skipped %}
+    <div class="card">
+        <h1 style="font-size:16px; margin-bottom:10px;">Не попали в фид</h1>
+        <table>
+            <tr><th>#</th><th>Товар</th><th>Причина</th></tr>
+            {% for s in stats.skipped %}
+            <tr><td>{{ s.id }}</td><td>{{ s.title }}</td><td class="bad">{{ s.reasons|join('; ') }}</td></tr>
+            {% endfor %}
+        </table>
+        <div class="hint">Такие товары Авито считает удалёнными. Если объявление уже опубликовано — оно уйдёт в архив.</div>
+    </div>
+    {% endif %}
+</body>
+</html>

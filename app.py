@@ -7,7 +7,7 @@ Vova40 — учёт секонд-хенда. Локальный сервер.
 import os, sys, uuid, logging, socket, re, re
 from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import urllib.parse, urllib.request, ssl
@@ -1277,6 +1277,59 @@ def env_set(key, value):
         lines.append(f"{key}={value}")
     open(path, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
 
+
+
+@app.route('/avito/feed.xml')
+def avito_feed_xml():
+    """Публичный XML-фид автозагрузки Авито со всеми активными товарами."""
+    import time as _time
+    import avito_feed as _af
+    feed_dir = os.path.join(BASE_DIR, 'static', 'avito_feeds')
+    path = os.path.join(feed_dir, 'feed.xml')
+    fresh = os.path.exists(path) and (_time.time() - os.path.getmtime(path) < 900)
+    if not fresh:
+        try:
+            _af.write_feed()
+        except Exception as e:
+            logger.error(f'avito feed build: {e}')
+    if not os.path.exists(path):
+        return 'Фид ещё не собран', 503
+    with open(path, encoding='utf-8') as f:
+        body = f.read()
+    resp = make_response(body)
+    resp.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    resp.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    return resp
+
+
+@app.route('/avito/feed')
+@login_required
+@admin_required
+def avito_feed_page():
+    """Страница состояния фида: сколько товаров, кого и почему пропустили."""
+    import avito_feed as _af
+    stats_path = os.path.join(BASE_DIR, 'static', 'avito_feeds', 'feed_stats.json')
+    stats = None
+    if os.path.exists(stats_path):
+        try:
+            with open(stats_path, encoding='utf-8') as f:
+                stats = json.load(f)
+        except Exception:
+            stats = None
+    if stats is None:
+        _, stats = _af.build()
+    feed_url = url_for('avito_feed_xml', _external=True)
+    return render_template('avito_feed.html', stats=stats, feed_url=feed_url)
+
+
+@app.route('/avito/feed/rebuild', methods=['POST'])
+@login_required
+@admin_required
+def avito_feed_rebuild():
+    import avito_feed as _af
+    xml, stats = _af.write_feed()
+    flash(f"Фид пересобран: {stats['in_feed']} объявлений, пропущено {len(stats['skipped'])}", 'success')
+    return redirect(url_for('avito_feed_page'))
 
 
 @app.route('/avito/setup', methods=['GET', 'POST'])
