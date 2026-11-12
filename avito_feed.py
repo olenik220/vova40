@@ -122,6 +122,62 @@ def render_ad(item, am):
     return "\n".join(parts)
 
 
+ACCOUNT_CACHE = os.path.join(BASE_DIR, "static", "avito_feeds", "account_ads.json")
+
+
+def account_ads(max_age=600):
+    """Список объявлений в аккаунте Авито через API (для сверки с фидом).
+    Кэшируется на 10 минут, чтобы не дёргать API на каждый показ страницы."""
+    import time as _t
+    import json as _json
+    try:
+        if os.path.exists(ACCOUNT_CACHE) and (_t.time() - os.path.getmtime(ACCOUNT_CACHE) < max_age):
+            with open(ACCOUNT_CACHE, encoding="utf-8") as f:
+                return _json.load(f)
+    except Exception:
+        pass
+
+    result = {"total": 0, "ids": [], "titles": {}, "error": ""}
+    try:
+        import avito_sync as asy
+        env = asy.load_env()
+        tok = asy.get_token(env)
+        if not tok:
+            result["error"] = "нет токена Авито"
+        else:
+            ids, titles, page = [], {}, 1
+            while page <= 30:
+                code, body = asy.http(
+                    "https://api.avito.ru/core/v1/items?per_page=100&page=%d" % page,
+                    headers={"Authorization": "Bearer " + tok})
+                if code != 200:
+                    if page == 1:
+                        result["error"] = "HTTP %s" % code
+                    break
+                data = _json.loads(body.decode("utf-8", "replace"))
+                res = data.get("resources") or []
+                if not res:
+                    break
+                for x in res:
+                    sid = str(x.get("id"))
+                    ids.append(sid)
+                    titles[sid] = x.get("title") or ""
+                if len(res) < 100:
+                    break
+                page += 1
+            result.update({"total": len(ids), "ids": ids, "titles": titles})
+    except Exception as e:
+        result["error"] = str(e)
+
+    try:
+        os.makedirs(os.path.dirname(ACCOUNT_CACHE), exist_ok=True)
+        with open(ACCOUNT_CACHE, "w", encoding="utf-8") as f:
+            _json.dump(result, f, ensure_ascii=False)
+    except Exception:
+        pass
+    return result
+
+
 def build(db_path=DB_PATH):
     """Собирает XML и статистику. Возвращает (xml, stats)."""
     conn = sqlite3.connect(db_path)
@@ -146,6 +202,18 @@ def build(db_path=DB_PATH):
         seen_ids[xml_id] = item["id"]
         ads.append(render_ad(item, am))
 
+    # сверка с аккаунтом Авито: чего не хватает в фиде и что появится заново
+    acc = account_ads()
+    feed_avito_ids = set()
+    for item in rows:
+        m = re.search(r"_(\d{6,})$", (item.get("avito_link") or "").strip())
+        if m:
+            feed_avito_ids.add(m.group(1))
+    acc_ids = set(acc.get("ids") or [])
+    missing = [{"id": a, "title": (acc.get("titles") or {}).get(a, "")}
+               for a in sorted(acc_ids - feed_avito_ids)]
+    extra = sorted(feed_avito_ids - acc_ids)
+
     xml = "\n".join(['<?xml version="1.0" encoding="UTF-8"?>',
                      '<Ads formatVersion="3" target="Avito.ru">'] + ads + ["</Ads>"])
     stats = {
@@ -154,6 +222,11 @@ def build(db_path=DB_PATH):
         "skipped": skipped,
         "statuses": list(FEED_STATUSES),
         "generated_at": __import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "avito_total": acc.get("total", 0),
+        "avito_error": acc.get("error", ""),
+        "missing_from_feed": missing[:50],
+        "missing_count": len(missing),
+        "new_for_avito": len(extra),
     }
     return xml, stats
 

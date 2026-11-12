@@ -41,11 +41,28 @@
         {% if messages %}{% for cat, msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
     {% endwith %}
 
-    <div class="card" style="border-left:4px solid #c62828;">
-        <b style="color:#c62828;">Перед первым включением проверь состав фида</b>
-        <div class="hint" style="color:#555;">Авито считает файл полным списком: всё, чего в нём нет, уйдёт в архив.
-            Нельзя включать загрузку по ссылке, пока в приложении нет всех объявлений, которые должны остаться на Авито.</div>
+    {% if stats.avito_error %}
+    <div class="card" style="border-left:4px solid #f9a825;">
+        <b>Сверка с Авито не удалась</b>
+        <div class="hint">Причина: {{ stats.avito_error }}. Цифры по аккаунту ниже могут быть неполными.</div>
     </div>
+    {% elif stats.missing_count and stats.missing_count > 0 %}
+    <div class="card" style="border-left:4px solid #c62828;">
+        <b style="color:#c62828;">Включать загрузку по ссылке нельзя</b>
+        <div class="row"><span>Объявлений в аккаунте Авито</span><b>{{ stats.avito_total }}</b></div>
+        <div class="row"><span>Объявлений в фиде</span><b>{{ stats.in_feed }}</b></div>
+        <div class="row"><span>Уйдёт в архив при включении</span>
+            <b class="bad">{{ stats.missing_count }}</b></div>
+        <div class="hint">Авито считает файл полным списком: всё, чего в нём нет, уходит в архив.
+            Список отсутствующих — ниже. Сначала загрузи эти объявления в приложение, потом включай.</div>
+    </div>
+    {% else %}
+    <div class="card" style="border-left:4px solid #2e7d32;">
+        <b class="good">Состав фида совпадает с аккаунтом</b>
+        <div class="hint">В аккаунте {{ stats.avito_total }} объявлений, в фиде {{ stats.in_feed }}.
+            Можно включать загрузку по ссылке.{% if stats.new_for_avito %} Новых для Авито: {{ stats.new_for_avito }}.{% endif %}</div>
+    </div>
+    {% endif %}
 
     <div class="card">
         <div class="row"><span>Собран</span><b>{{ stats.generated_at }}</b></div>
@@ -65,6 +82,19 @@
         <div class="hint">Эту ссылку нужно вставить в кабинете Авито: Автозагрузка → Настройки → Настроить загрузку по ссылке.
             Фид пересобирается автоматически каждые 15 минут.</div>
     </div>
+
+    {% if stats.missing_from_feed %}
+    <div class="card">
+        <h1 style="font-size:16px; margin-bottom:10px;">Есть на Авито, но нет в приложении ({{ stats.missing_count }})</h1>
+        <table>
+            <tr><th>AvitoId</th><th>Название на Авито</th></tr>
+            {% for m in stats.missing_from_feed %}
+            <tr><td>{{ m.id }}</td><td>{{ m.title }}</td></tr>
+            {% endfor %}
+        </table>
+        <div class="hint">Показаны первые 50. Именно эти объявления уйдут в архив при включении фида.</div>
+    </div>
+    {% endif %}
 
     {% if stats.skipped %}
     <div class="card">
