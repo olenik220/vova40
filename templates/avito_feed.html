@@ -71,6 +71,9 @@
         <div class="row"><span>Пропущено</span>
             <b class="{{ 'bad' if stats.skipped else 'good' }}">{{ stats.skipped|length }}</b></div>
         <div class="row"><span>Статусы в фиде</span><b>{{ stats.statuses|join(', ') }}</b></div>
+        <div class="row"><span>Уйдут в архив осознанно (проданы/списаны)</span><b>{{ stats.planned_archive_count or 0 }}</b></div>
+        <div class="row"><span>Отдача фида</span>
+            {% if stats.safe %}<b class="good">разрешена</b>{% else %}<b class="bad">заблокирована</b>{% endif %}</div>
 
         <span class="url">{{ feed_url }}</span>
         <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">

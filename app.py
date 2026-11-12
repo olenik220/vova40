@@ -1291,9 +1291,25 @@ def avito_feed_xml():
         try:
             _af.write_feed()
         except Exception as e:
-            logger.error(f'avito feed build: {e}')
+            app.logger.error('avito feed build: %s', e)
     if not os.path.exists(path):
         return 'Фид ещё не собран', 503
+
+    # Защита аккаунта: не отдаём фид, если в нём не хватает объявлений,
+    # о которых мы ничего не знаем (Авито заархивировал бы их).
+    stats_path = os.path.join(feed_dir, 'feed_stats.json')
+    safe = False
+    try:
+        with open(stats_path, encoding='utf-8') as f:
+            st = json.load(f)
+        safe = bool(st.get('safe'))
+        missing = st.get('missing_count', 0)
+    except Exception:
+        safe, missing = False, 0
+    if not safe:
+        app.logger.warning('avito feed: отдача заблокирована, неизвестных объявлений %s', missing)
+        return 'Фид собирается: состав ещё не сверен с аккаунтом', 503
+
     with open(path, encoding='utf-8') as f:
         body = f.read()
     resp = make_response(body)

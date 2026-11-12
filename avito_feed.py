@@ -25,8 +25,14 @@ LOG_PATH = os.path.join(BASE_DIR, "avito_feed.log")
 # Какие статусы попадают в фид. Всё остальное Авито воспримет как «удалено» и заархивирует.
 FEED_STATUSES = ("В работе", "На Avito")
 
-logging.basicConfig(filename=LOG_PATH, level=logging.INFO,
-                    format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+# лог может быть недоступен для записи (например, создан root'ом) — тогда пишем в stderr
+try:
+    logging.basicConfig(filename=LOG_PATH, level=logging.INFO,
+                        format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    logging.getLogger().info("--- запуск сборки фида ---")
+except Exception:
+    logging.basicConfig(level=logging.INFO,
+                        format="[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 
 def photo_urls(item):
@@ -210,8 +216,22 @@ def build(db_path=DB_PATH):
         if m:
             feed_avito_ids.add(m.group(1))
     acc_ids = set(acc.get("ids") or [])
-    missing = [{"id": a, "title": (acc.get("titles") or {}).get(a, "")}
-               for a in sorted(acc_ids - feed_avito_ids)]
+
+    # все объявления, которые вообще есть в нашей базе (любой статус)
+    conn2 = sqlite3.connect(DB_PATH)
+    db_avito_ids = set()
+    for (link,) in conn2.execute("select avito_link from items where coalesce(avito_link,'')<>''"):
+        m = re.search(r"_(\d{6,})$", (link or "").strip())
+        if m:
+            db_avito_ids.add(m.group(1))
+    conn2.close()
+
+    not_in_feed = acc_ids - feed_avito_ids
+    # лежат в базе (например «Продано») — уйдут в архив осознанно
+    planned_archive = sorted(not_in_feed & db_avito_ids)
+    # про них мы вообще ничего не знаем — это опасно
+    unknown = sorted(not_in_feed - db_avito_ids)
+    missing = [{"id": a, "title": (acc.get("titles") or {}).get(a, "")} for a in unknown]
     extra = sorted(feed_avito_ids - acc_ids)
 
     xml = "\n".join(['<?xml version="1.0" encoding="UTF-8"?>',
@@ -226,7 +246,10 @@ def build(db_path=DB_PATH):
         "avito_error": acc.get("error", ""),
         "missing_from_feed": missing[:50],
         "missing_count": len(missing),
+        "planned_archive_count": len(planned_archive),
         "new_for_avito": len(extra),
+        # фид можно отдавать только когда в нём нет «потерянных» объявлений
+        "safe": (not acc.get("error")) and len(missing) == 0,
     }
     return xml, stats
 
@@ -234,11 +257,14 @@ def build(db_path=DB_PATH):
 def write_feed():
     xml, stats = build()
     os.makedirs(os.path.dirname(FEED_PATH), exist_ok=True)
-    with open(FEED_PATH, "w", encoding="utf-8") as f:
-        f.write(xml)
-    stats_path = FEED_PATH.replace(".xml", "_stats.json")
-    with open(stats_path, "w", encoding="utf-8") as f:
-        json.dump(stats, f, ensure_ascii=False, indent=1)
+    try:
+        with open(FEED_PATH, "w", encoding="utf-8") as f:
+            f.write(xml)
+        stats_path = FEED_PATH.replace(".xml", "_stats.json")
+        with open(stats_path, "w", encoding="utf-8") as f:
+            json.dump(stats, f, ensure_ascii=False, indent=1)
+    except Exception as e:
+        logging.error("не смог записать фид: %s", e)
     logging.info("фид собран: товаров %d, в фиде %d, отброшено %d",
                  stats["total_in_db"], stats["in_feed"], len(stats["skipped"]))
     for s in stats["skipped"]:
