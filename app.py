@@ -905,6 +905,13 @@ def item_card(item_id):
         return redirect(url_for('warehouse_choice'))
     wh_name = db.get_warehouse_name(item.get('warehouse', 'base'))
     photos = item.get('photos', '').split(',') if item.get('photos') else []
+    # состояние товара относительно фида автозагрузки
+    try:
+        import avito_feed as _af
+        feed_state = _af.item_state(item)
+    except Exception as e:
+        feed_state = {'in_feed': False, 'status_ok': False, 'issues': [str(e)],
+                      'status': item.get('status', '')}
     user = session.get('user') or {}
     can_edit = (user.get('role') == 'admin'
                 or (item.get('created_by') == user.get('username')
@@ -914,7 +921,8 @@ def item_card(item_id):
         statuses=config.STATUSES,
         categories=config.CATEGORIES, conditions=config.CONDITIONS,
         warehouses=WAREHOUSES, avito_cats=config.AVITO_CATEGORIES,
-        avito_comm=config.AVITO_COMMISSION, tax_pct=config.TAX_RATE)
+        avito_comm=config.AVITO_COMMISSION, tax_pct=config.TAX_RATE,
+        feed_state=feed_state)
 
 # ───── РЕДАКТИРОВАНИЕ ТОВАРА ─────
 @app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -1063,6 +1071,49 @@ def update_description(item_id):
     db.update_item(item_id, description=description)
     flash('Описание сохранено!', 'success')
     return redirect(url_for('item_card', item_id=item_id))
+
+@app.route('/item/<int:item_id>/avito-prepare', methods=['POST'])
+@login_required
+@admin_required
+def avito_prepare_item(item_id):
+    """Включить товар в фид: при необходимости перевести статус в «В работе» и пересобрать фид."""
+    item = db.get_item_by_id(item_id)
+    if not item:
+        flash('Товар не найден', 'danger')
+        return redirect(url_for('warehouse_choice'))
+    import avito_feed as _af
+    state = _af.item_state(item)
+    if not state['status_ok']:
+        db.update_status(item_id, 'В работе')
+        flash('Статус изменён на «В работе» — товар попадает в фид', 'success')
+    if state['issues']:
+        flash('В фид пока не попадёт: ' + '; '.join(state['issues']), 'danger')
+        return redirect(url_for('item_card', item_id=item_id))
+    _xml, stats = _af.write_feed()
+    flash(f"Фид пересобран: {stats['in_feed']} объявлений. Товар внутри.", 'success')
+    return redirect(url_for('item_card', item_id=item_id))
+
+
+@app.route('/item/<int:item_id>/avito-push', methods=['POST'])
+@login_required
+@admin_required
+def avito_push_item(item_id):
+    """Просим Авито обработать фид немедленно (обрабатывается весь файл, не один товар)."""
+    item = db.get_item_by_id(item_id)
+    if not item:
+        flash('Товар не найден', 'danger')
+        return redirect(url_for('warehouse_choice'))
+    import avito_feed as _af
+    state = _af.item_state(item)
+    if not state['status_ok']:
+        db.update_status(item_id, 'В работе')
+    if state['issues']:
+        flash('Не отправлено: ' + '; '.join(state['issues']), 'danger')
+        return redirect(url_for('item_card', item_id=item_id))
+    ok, msg = _af.push_to_avito()
+    flash(msg, 'success' if ok else 'danger')
+    return redirect(url_for('item_card', item_id=item_id))
+
 
 @app.route('/item/<int:item_id>/avito', methods=['POST'])
 @login_required

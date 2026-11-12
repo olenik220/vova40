@@ -165,6 +165,26 @@
                             font-size: 44px; color: #fff; opacity: .75; cursor: pointer;
                             padding: 10px 16px; user-select: none; z-index: 2;
                             text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+        .avito-panel { background:#fff; border-radius:12px; padding:14px; margin:0 0 14px;
+                       box-shadow:0 1px 3px rgba(0,0,0,.06); }
+        .avito-head { display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom:8px; }
+        .avito-head b { font-size:15px; }
+        .chip { font-size:12px; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+        .chip.ok { background:#e8f5e9; color:#2e7d32; }
+        .chip.bad { background:#ffebee; color:#c62828; }
+        .chip.wait { background:#fff8e1; color:#ef6c00; }
+        .avito-issues { background:#ffebee; color:#c62828; border-radius:8px; padding:8px 10px;
+                        font-size:13px; margin-bottom:8px; line-height:1.5; }
+        .avito-params { font-size:12px; color:#777; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px; }
+        .avito-actions { display:flex; flex-wrap:wrap; gap:8px; }
+        .avito-actions form { margin:0; }
+        .btn-avito-1, .btn-avito-2, .btn-avito-3 { display:inline-flex; align-items:center; gap:6px;
+            padding:9px 14px; border:none; border-radius:8px; font-size:13px; cursor:pointer;
+            text-decoration:none; }
+        .btn-avito-1 { background:#1565c0; color:#fff; }
+        .btn-avito-2 { background:#eceff1; color:#37474f; }
+        .btn-avito-3 { background:#f5f5f5; color:#555; }
+        .avito-hint { font-size:11px; color:#999; line-height:1.5; margin-top:8px; }
         .lightbox .lb-nav.prev { left: 4px; }
         .lightbox .lb-nav.next { right: 4px; }
         .lightbox .lb-zoom-hint { position: absolute; bottom: 18px; left: 0; right: 0; text-align: center;
@@ -178,8 +198,8 @@
         {% if is_admin or can_edit %}
         <div class="header-actions" style="display:flex;gap:8px;align-items:center;">
             {% if is_admin %}
-            <a href="{{ url_for('export_avito_item', item_id=item.id) }}" title="Выгрузить товар на Авито через API (Автозагрузка)">
-                <button class="avito-btn"><i class="fa-solid fa-upload"></i> Залить на Авито</button>
+            <a href="#avito-block" title="Публикация на Авито">
+                <button class="avito-btn"><i class="fa-solid fa-upload"></i> Авито</button>
             </a>
             {% endif %}
             <a href="{{ url_for('edit_item', item_id=item.id) }}">
@@ -197,6 +217,53 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        <!-- БЛОК АВИТО -->
+        <div id="avito-block" class="avito-panel">
+            <div class="avito-head">
+                <b>Публикация на Авито</b>
+                {% if feed_state.in_feed %}
+                    <span class="chip ok"><i class="fa-solid fa-circle-check"></i> в фиде</span>
+                {% elif feed_state.status_ok %}
+                    <span class="chip bad"><i class="fa-solid fa-triangle-exclamation"></i> в фид не попадёт</span>
+                {% else %}
+                    <span class="chip wait"><i class="fa-solid fa-clock"></i> статус «{{ feed_state.status or '—' }}»</span>
+                {% endif %}
+            </div>
+
+            {% if feed_state.issues %}
+            <div class="avito-issues">
+                {% for i in feed_state.issues %}<div>• {{ i }}</div>{% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="avito-params">
+                <span>{{ feed_state.category or '—' }}</span>
+                {% if feed_state.goods_type %}<span>› {{ feed_state.goods_type }}</span>{% endif %}
+                {% if feed_state.apparel %}<span>› {{ feed_state.apparel }}</span>{% endif %}
+                {% if feed_state.apparel_type %}<span>› {{ feed_state.apparel_type }}</span>{% endif %}
+                {% if feed_state.size %}<span>· размер {{ feed_state.size }}</span>{% endif %}
+                {% if feed_state.condition %}<span>· {{ feed_state.condition }}</span>{% endif %}
+            </div>
+
+            <div class="avito-actions">
+                <form method="post" action="{{ url_for('avito_prepare_item', item_id=item.id) }}">
+                    <button class="btn-avito-2" type="submit"><i class="fa-solid fa-list-check"></i> Подготовить к публикации</button>
+                </form>
+                <form method="post" action="{{ url_for('avito_push_item', item_id=item.id) }}"
+                      onsubmit="return confirm('Авито обработает весь файл целиком, а не только этот товар. Продолжить?');">
+                    <button class="btn-avito-1" type="submit"><i class="fa-solid fa-paper-plane"></i> Отправить в Авито сейчас</button>
+                </form>
+                <a class="btn-avito-3" href="{{ url_for('export_avito_item', item_id=item.id) }}">
+                    <i class="fa-solid fa-download"></i> Скачать XML товара
+                </a>
+            </div>
+            <div class="avito-hint">
+                «Подготовить» — проверить данные и пересобрать фид. «Отправить» — попросить Авито забрать фид
+                немедленно: публикуется весь файл, а расписание в кабинете решает, сколько объявлений за раз.
+                {% if item.avito_link %}<br>Объявление уже на Авито — при отправке обновится, дубль не создастся.{% endif %}
+            </div>
+        </div>
 
         {% set photo_list = (item.photos or '').split(',') if item.photos else [] %}
         {% set photo_list = photo_list | map('trim') | select | list %}

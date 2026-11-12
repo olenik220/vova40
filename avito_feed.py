@@ -294,6 +294,50 @@ def write_feed():
     return xml, stats
 
 
+def item_state(item):
+    """Состояние товара относительно фида: попадёт ли он в выгрузку и почему нет."""
+    am = avito_map.build(item)
+    errs = problems(item, am)
+    status = (item.get("status") or "").strip()
+    in_status = status in FEED_STATUSES
+    return {
+        "in_feed": in_status and not errs,
+        "status_ok": in_status,
+        "issues": errs,
+        "status": status,
+        "category": am.get("category", ""),
+        "goods_type": am.get("goods_type", ""),
+        "apparel": am.get("apparel", ""),
+        "apparel_type": am.get("apparel_type", ""),
+        "condition": am.get("condition", ""),
+        "size": am.get("size", ""),
+    }
+
+
+def push_to_avito():
+    """Пересобирает фид и просит Авито обработать его немедленно.
+
+    Возвращает (ok, текст). Авито обрабатывает ВЕСЬ файл, а не один товар —
+    так устроена автозагрузка. Расписание определяет, сколько объявлений
+    публикуется за раз.
+    """
+    import avito_sync as asy
+    xml, stats = write_feed()
+    if not stats.get("safe"):
+        return False, ("Фид не отправлен: состав не совпадает с аккаунтом "
+                       "(неизвестных объявлений: %s)" % stats.get("missing_count"))
+    env = asy.load_env()
+    tok = asy.get_token(env)
+    if not tok:
+        return False, "Нет токена Авито — проверьте настройки"
+    code, body = asy.http("https://api.avito.ru/autoload/v1/upload",
+                          headers={"Authorization": "Bearer " + tok}, method="POST")
+    text = body.decode("utf-8", "replace")[:300]
+    if code in (200, 201, 202):
+        return True, "Авито принял команду на выгрузку (%s). Отчёт появится в кабинете в течение часа." % code
+    return False, "Авито ответил %s: %s" % (code, text)
+
+
 if __name__ == "__main__":
     xml, st = write_feed()
     print("в базе активных: %d, в фиде: %d, отброшено: %d"
