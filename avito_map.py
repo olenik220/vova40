@@ -220,8 +220,15 @@ def build(item):
     # новая схема Авито: GoodsType — верхний уровень (Мужская одежда),
     # Apparel — тип товара (Верхняя одежда), ApparelType — вид (Лёгкие куртки и ветровки)
     subcategory = (item.get("subcategory") or "").strip()
-    goods_type_top = avito_enums.GOODS_TYPE_BY_CATEGORY.get(category)
-    apparel, apparel_type, apparel_confirmed = avito_enums.apparel_for(subcategory)
+    goods_type_top = (str(item.get("avito_goods_type") or "").strip()
+                      or avito_enums.GOODS_TYPE_BY_CATEGORY.get(category))
+    stored_apparel = str(item.get("avito_apparel") or "").strip()
+    stored_type = str(item.get("avito_apparel_type") or "").strip()
+    if stored_apparel:
+        # значения пришли из самой выгрузки Авито — используем как есть
+        apparel, apparel_type, apparel_confirmed = stored_apparel, stored_type, True
+    else:
+        apparel, apparel_type, apparel_confirmed = avito_enums.apparel_for(subcategory)
     if goods_type_top:
         goods_type_value = goods_type_top
     else:

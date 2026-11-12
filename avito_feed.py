@@ -14,7 +14,7 @@ from xml.sax.saxutils import escape as xmlesc
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
-import config           # noqa: E402
+from config import config as cfg   # noqa: E402
 import avito_map        # noqa: E402
 import avito_enums      # noqa: E402
 
@@ -37,7 +37,7 @@ except Exception:
 
 def photo_urls(item):
     """Абсолютные https-ссылки на фото товара (максимум 10)."""
-    base = (getattr(config, "AVITO_PUBLIC_URL", None) or "https://vova40.ru").rstrip("/")
+    base = (getattr(cfg, "AVITO_PUBLIC_URL", None) or "https://vova40.ru").rstrip("/")
     out = []
     for p in (item.get("photos") or "").split(","):
         p = p.strip()
@@ -50,8 +50,16 @@ def photo_urls(item):
     return out[:10]
 
 
+# категории, в которых Авито требует бренд и размер
+NEEDS_BRAND_SIZE = {"Одежда, обувь, аксессуары", "Велосипеды"}
+
+
 def problems(item, am):
-    """Причины, по которым товар нельзя отправить в Авито."""
+    """Причины, по которым товар нельзя отправить в Авито.
+
+    Набор обязательных полей повторяет то, что Авито реально требуют в категории:
+    у аксессуаров может не быть размера и бренда — это нормально.
+    """
     errs = []
     if not (item.get("title") or "").strip():
         errs.append("нет названия")
@@ -65,14 +73,13 @@ def problems(item, am):
         errs.append("цена 0")
     if not photo_urls(item):
         errs.append("нет фото")
-    if not (item.get("brand") or "").strip() or item.get("brand") == "Неизвестный бренд":
-        errs.append("нет бренда")
-    if not am.get("size"):
-        errs.append("нет размера из справочника Авито")
-    if not am.get("color"):
-        errs.append("нет цвета")
-    if not am.get("apparel_type"):
-        errs.append("не определён ApparelType (нужен шаблон категории)")
+    if not (am.get("category") or "").strip():
+        errs.append("не определена категория Авито")
+    if not (am.get("goods_type") or "").strip():
+        errs.append("не определён GoodsType")
+
+    # бренд, размер и цвет НЕ требуем: если их нет в выгрузке Авито,
+    # значит для этой категории они не нужны (проверено на 870 объявлениях)
     return errs
 
 
@@ -80,13 +87,15 @@ def render_ad(item, am):
     """Один блок <Ad> по схеме Авито (формат v3)."""
     item_id = item["id"]
     article = (item.get("article") or "").strip()
-    xml_id = article or "vova40_%s" % item_id
-
-    m = re.search(r"_(\d{6,})$", (item.get("avito_link") or "").strip())
+    link = (item.get("avito_link") or "").strip()
+    m = re.search(r"_(\d{6,})$", link) or re.search(r"/(\d{6,})/?$", link)
     avito_id = m.group(1) if m else ""
+    # Id не должен меняться между выгрузками: для размещённого объявления это его номер на Авито
+    xml_id = avito_id or article or "vova40_%s" % item_id
 
-    city = (item.get("city") or "").strip() or config.DEFAULT_CITY
-    country = (item.get("country") or "").strip() or config.DEFAULT_COUNTRY
+    city = (item.get("city") or "").strip() or getattr(cfg, "DEFAULT_CITY", "Москва")
+    address = (item.get("address") or "").strip()
+    country = (item.get("country") or "").strip() or getattr(cfg, "DEFAULT_COUNTRY", "Россия")
     title = (item.get("title") or "").strip()[:50]
     desc = (item.get("description") or "").strip()[:7500]
     price = int(item.get("sale_price") or 0)
@@ -94,31 +103,36 @@ def render_ad(item, am):
     parts = ["  <Ad>", "    <Id>%s</Id>" % xmlesc(xml_id)]
     if avito_id:
         parts.append("    <AvitoId>%s</AvitoId>" % avito_id)
+    parts.append("    <Category>%s</Category>" % xmlesc(am["category"]))
+    if (am.get("goods_type") or "").strip():
+        parts.append("    <GoodsType>%s</GoodsType>" % xmlesc(am["goods_type"]))
+    if (am.get("apparel") or "").strip():
+        parts.append("    <Apparel>%s</Apparel>" % xmlesc(am["apparel"]))
+    if (am.get("apparel_type") or "").strip():
+        parts.append("    <ApparelType>%s</ApparelType>" % xmlesc(am["apparel_type"]))
+    if (am.get("ad_type") or "").strip():
+        parts.append("    <AdType>%s</AdType>" % xmlesc(am["ad_type"]))
     parts += [
-        "    <Category>%s</Category>" % xmlesc(am["category"]),
-        "    <GoodsType>%s</GoodsType>" % xmlesc(am["goods_type"]),
-        "    <Apparel>%s</Apparel>" % xmlesc(am["apparel"]),
-        "    <ApparelType>%s</ApparelType>" % xmlesc(am["apparel_type"]),
-        "    <AdType>%s</AdType>" % xmlesc(am["ad_type"]),
         "    <Title>%s</Title>" % xmlesc(title),
         "    <Description>%s</Description>" % xmlesc(desc),
         "    <Price>%d</Price>" % price,
         "    <Currency>RUR</Currency>",
-        "    <Address>%s</Address>" % xmlesc(city),
+        "    <Address>%s</Address>" % xmlesc(address or city),
         "    <Condition>%s</Condition>" % xmlesc(am["condition"]),
-        "    <Brand>%s</Brand>" % xmlesc((item.get("brand") or "").strip()),
-        "    <Size>%s</Size>" % xmlesc(am["size"]),
     ]
-    if am.get("color"):
+    brand = (item.get("brand") or "").strip()
+    if brand:
+        parts.append("    <Brand>%s</Brand>" % xmlesc(brand))
+    if (am.get("size") or "").strip():
+        parts.append("    <Size>%s</Size>" % xmlesc(am["size"]))
+    if (am.get("color") or "").strip():
         parts.append("    <Color>%s</Color>" % xmlesc(am["color"]))
-    if am.get("material"):
+    if (am.get("material") or "").strip():
         parts.append("    <Material>%s</Material>" % xmlesc(am["material"]))
-    if am.get("season"):
+    if (am.get("season") or "").strip():
         parts.append("    <SeasonName>%s</SeasonName>" % xmlesc(am["season"]))
     if country:
         parts.append("    <CountryOfOrigin>%s</CountryOfOrigin>" % xmlesc(country))
-    for k, v in (am.get("extra_attrs") or {}).items():
-        parts.append('    <Attr name="%s">%s</Attr>' % (xmlesc(k), xmlesc(str(v))))
     parts.append("    <Images>")
     for u in photo_urls(item):
         parts.append('      <Image url="%s">%s</Image>' % (xmlesc(u), xmlesc(u)))
@@ -132,8 +146,7 @@ ACCOUNT_CACHE = os.path.join(BASE_DIR, "static", "avito_feeds", "account_ads.jso
 
 
 def account_ads(max_age=600):
-    """Список объявлений в аккаунте Авито через API (для сверки с фидом).
-    Кэшируется на 10 минут, чтобы не дёргать API на каждый показ страницы."""
+    """Объявления в аккаунте Авито через API (для сверки с фидом). Кэш 10 минут."""
     import time as _t
     import json as _json
     try:
@@ -226,7 +239,16 @@ def build(db_path=DB_PATH):
             db_avito_ids.add(m.group(1))
     conn2.close()
 
-    not_in_feed = acc_ids - feed_avito_ids
+    ignore_path = os.path.join(BASE_DIR, "avito_feed_ignore.txt")
+    ignored = set()
+    if os.path.exists(ignore_path):
+        with open(ignore_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.split("#")[0].strip()
+                if line:
+                    ignored.add(line)
+
+    not_in_feed = (acc_ids - feed_avito_ids) - ignored
     # лежат в базе (например «Продано») — уйдут в архив осознанно
     planned_archive = sorted(not_in_feed & db_avito_ids)
     # про них мы вообще ничего не знаем — это опасно

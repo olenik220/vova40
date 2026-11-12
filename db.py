@@ -99,6 +99,11 @@ class Database:
                     conn.execute(f"ALTER TABLE items ADD COLUMN {_col} TEXT DEFAULT ''")
                 except Exception:
                     pass
+            for _col in ('avito_goods_type', 'avito_apparel', 'avito_apparel_type', 'address', 'avito_params'):
+                try:
+                    conn.execute(f"ALTER TABLE items ADD COLUMN {_col} TEXT DEFAULT ''")
+                except Exception:
+                    pass
             conn.commit()
         except Exception as e:
             logger.error(f"DB init: {e}")
@@ -145,7 +150,8 @@ class Database:
     def update_item(self, item_id, **kw):
         allowed = {"warehouse","article","category","subcategory","brand","size","condition",
                     "purchase_price","sale_price","description","avito_link","note","photos","tech_photos","attrs","title","supplier",
-                    "color","material","season","country","city"}
+                    "color","material","season","country","city",
+                    "avito_goods_type","avito_apparel","avito_apparel_type","address"}
         up = {k: v for k, v in kw.items() if k in allowed}
         if "attrs" in up and isinstance(up["attrs"], dict):
             import json as _j
