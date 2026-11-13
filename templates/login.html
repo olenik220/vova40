@@ -12,10 +12,9 @@
                       box-shadow: 0 4px 20px rgba(0,0,0,.08); text-align: center; }
         .login-card h1 { font-size: 22px; margin-bottom: 16px; }
         .login-card p { color: #666; margin-bottom: 20px; font-size: 14px; }
-        .logo-badge { display: inline-flex; align-items: center; justify-content: center;
-                     background: linear-gradient(135deg, #4A90D9, #357ABD);
-                     color: white; border-radius: 12px; padding: 8px 18px;
-                     font-size: 36px; font-weight: 800; letter-spacing: 2px; margin-bottom: 8px; }
+        .logo-img { width: 148px; height: 148px; border-radius: 50%; object-fit: cover;
+                    display: block; margin: 0 auto 12px; background: #fff;
+                    box-shadow: 0 3px 14px rgba(0,0,0,.12); }
         .brand-name { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
         input[type="password"] { width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #ddd;
                                 border-radius: 10px; outline: none; }
@@ -30,7 +29,7 @@
 </head>
 <body>
     <div class="login-card">
-        <div class="logo-badge">40</div>
+        <img class="logo-img" src="/static/logo-256.jpg" alt="Vova40">
         <div class="brand-name">Vova40</div>
         <p>Введите пароль для доступа</p>
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -46,8 +45,7 @@
             <button type="submit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Войти</button>
         </form>
         <div style="margin-top:16px;font-size:12px;color:#aaa;line-height:1.5;">
-            Администратор: имя пустое или «admin» + пароль.<br>
-            Сотрудник Max: имя «Max», пароль max13.
+            Вход для администратора и сотрудников склада.
         </div>
     </div>
 </body>

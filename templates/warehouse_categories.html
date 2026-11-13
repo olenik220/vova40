@@ -26,7 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 </style>
 </head>
 <body>
-<div class="header"><a href="{{ url_for('warehouse_choice') }}">←</a><h1><img class="logo" src="/static/logo.jpg" alt="40"><span class="wh-name">{{ wh_name }}</span></h1>{% if is_admin %}<a class="stats-link" href="{{ url_for('stats', wh_id=wh_id) }}"><i class="fa-solid fa-chart-simple"></i></a>{% endif %}</div>
+<div class="header"><a href="{{ url_for('warehouse_choice') }}">←</a><h1><img class="logo" src="/static/logo-256.jpg" alt="40"><span class="wh-name">{{ wh_name }}</span></h1>{% if is_admin %}<a class="stats-link" href="{{ url_for('stats', wh_id=wh_id) }}"><i class="fa-solid fa-chart-simple"></i></a>{% endif %}</div>
 <div class="content">
 {% if cats %}
 <div class="grid">

@@ -22,7 +22,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 </style>
 </head>
 <body>
-<div class="header"><a href="{{ url_for('warehouse_categories', wh_id=wh_id) }}">←</a><h1><img class="logo" src="/static/logo.jpg" alt="40"> {{ wh_name }}</h1></div>
+<div class="header"><a href="{{ url_for('warehouse_categories', wh_id=wh_id) }}">←</a><h1><img class="logo" src="/static/logo-256.jpg" alt="40"> {{ wh_name }}</h1></div>
 <div class="content"><div class="grid">
 {% for cat_key, cat_val in avito_cats.items() %}
 <a class="cat" href="{{ url_for('choose_category', wh_id=wh_id, category=cat_key) }}">
