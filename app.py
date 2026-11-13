@@ -1357,22 +1357,22 @@ def avito_feed_xml():
     if not os.path.exists(path):
         return 'Фид ещё не собран', 503
 
-    # Защита аккаунта: не отдаём фид, если в нём не хватает объявлений,
-    # о которых мы ничего не знаем (Авито заархивировал бы их).
+    # По строгому правилу фид содержит только новые товары.
+    # Если он пуст — отдавать нечего; если внутри оказались существующие объявления — блокируем.
     stats_path = os.path.join(feed_dir, 'feed_stats.json')
-    safe = False
     try:
         with open(stats_path, encoding='utf-8') as f:
             st = json.load(f)
-        safe = bool(st.get('safe'))
-        missing = st.get('missing_count', 0)
     except Exception:
-        safe, missing = False, 0
-    if not safe:
-        app.logger.warning('avito feed: отдача заблокирована, неизвестных объявлений %s', missing)
-        if 'missing' in dir() and missing == 0 and not st.get('in_feed'):
-            return 'Нет новых объявлений для публикации', 503
-        return 'Фид собирается: состав ещё не сверен с аккаунтом', 503
+        st = {}
+    if not st:
+        return 'Фид ещё собирается, попробуйте через минуту', 503
+    if int(st.get('touches_existing') or 0) > 0:
+        app.logger.error('avito feed: в фиде %s существующих объявлений — отдача заблокирована',
+                         st.get('touches_existing'))
+        return 'Фид остановлен: в файле оказались существующие объявления', 503
+    if int(st.get('in_feed') or 0) == 0:
+        return 'Нет новых объявлений для публикации', 503
 
     with open(path, encoding='utf-8') as f:
         body = f.read()
