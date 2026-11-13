@@ -152,6 +152,21 @@
         .tech-block .tech-thumbs a { display: block; }
         .tech-block .tech-thumb { width: 72px; height: 72px; object-fit: contain; background: #f2f2f2; border-radius: 10px; border: 1px solid #e0e0e0; }
 
+        /* ── Полноэкранный просмотр с зумом ── */
+        .viewer { position: fixed; inset: 0; background: #000; z-index: 200; }
+        .viewer .vw-top { position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+                          display: flex; justify-content: space-between; align-items: center;
+                          padding: 12px 16px; color: #fff; background: linear-gradient(rgba(0,0,0,.55), transparent); }
+        .viewer .vw-count { font-size: 14px; opacity: .9; }
+        .viewer .vw-close { font-size: 30px; line-height: 1; cursor: pointer; padding: 2px 8px; }
+        .viewer .vw-stage { position: absolute; inset: 0; display: flex; align-items: center;
+                            justify-content: center; overflow: hidden; touch-action: none; }
+        .viewer .vw-img { max-width: 100%; max-height: 100%; object-fit: contain;
+                          transform-origin: center center; will-change: transform;
+                          user-select: none; -webkit-user-select: none; -webkit-user-drag: none; }
+        .viewer .vw-hint { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center;
+                           color: rgba(255,255,255,.55); font-size: 12px; z-index: 3; }
+
         /* ── Полноэкранная галерея тех-фото (лайтбокс) ── */
         .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.96); z-index: 100;
                     display: flex; align-items: center; justify-content: center; }
@@ -520,6 +535,18 @@
         {% endif %}
     </div>
 
+    <!-- Полноэкранный просмотр фото с зумом -->
+    <div class="viewer" id="viewer" style="display:none">
+        <div class="vw-top">
+            <span class="vw-count" id="vwCount"></span>
+            <span class="vw-close" id="vwClose">✕</span>
+        </div>
+        <div class="vw-stage" id="vwStage">
+            <img class="vw-img" id="vwImg" alt="">
+        </div>
+        <div class="vw-hint">Два пальца — масштаб, двойной тап — увеличить/сбросить</div>
+    </div>
+
         <!-- Полноэкранный просмотр замеров и косяков -->
         {% if tech_list %}
         <div class="lightbox" id="techLightbox" style="display:none">
@@ -690,6 +717,120 @@
                 applyBtn.style.display = '';
             });
         })();
+    </script>
+
+    <script>
+    // ── Просмотр фото с пинч-зумом ──
+    (function () {
+        var viewer = document.getElementById('viewer');
+        var stage  = document.getElementById('vwStage');
+        var img    = document.getElementById('vwImg');
+        var counter= document.getElementById('vwCount');
+        if (!viewer || !stage || !img) return;
+
+        var scale = 1, minScale = 1, maxScale = 6, tx = 0, ty = 0;
+        var startDist = 0, startScale = 1, startX = 0, startY = 0, startTx = 0, startTy = 0;
+        var lastTap = 0, idx = 0;
+
+        function apply() {
+            img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+        }
+        function reset() {
+            scale = 1; tx = 0; ty = 0; apply();
+        }
+        function clampPan() {
+            var r = stage.getBoundingClientRect();
+            var maxX = Math.max(0, (r.width * scale - r.width) / 2);
+            var maxY = Math.max(0, (r.height * scale - r.height) / 2);
+            tx = Math.min(maxX, Math.max(-maxX, tx));
+            ty = Math.min(maxY, Math.max(-maxY, ty));
+        }
+        function show(i) {
+            if (!photoList.length) return;
+            idx = (i + photoList.length) % photoList.length;
+            img.src = photoList[idx];
+            if (counter) counter.textContent = (idx + 1) + ' / ' + photoList.length;
+            reset();
+        }
+        function open(i) {
+            if (!photoList.length) return;
+            viewer.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            show(i);
+        }
+        function close() {
+            viewer.style.display = 'none';
+            document.body.style.overflow = '';
+            reset();
+        }
+
+        // открытие по тапу на главном фото
+        if (mainImg) {
+            mainImg.addEventListener('click', function () { open(currentSlide); });
+        }
+        // и на миниатюрах галереи
+        document.querySelectorAll('.photo-thumbs .pt').forEach(function (el, i) {
+            el.addEventListener('click', function (e) { e.preventDefault(); open(i); });
+        });
+
+        document.getElementById('vwClose').addEventListener('click', close);
+        stage.addEventListener('dblclick', function () { scale = scale > 1.2 ? 1 : 2.5; clampPan(); apply(); });
+
+        function dist(t) {
+            var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        stage.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 2) {
+                startDist = dist(e.touches); startScale = scale; startTx = tx; startTy = ty;
+                e.preventDefault();
+            } else if (e.touches.length === 1) {
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+                startTx = tx; startTy = ty;
+                var now = Date.now();
+                if (now - lastTap < 300) {                  // двойной тап
+                    scale = scale > 1.2 ? 1 : 2.5;
+                    tx = 0; ty = 0; clampPan(); apply();
+                    lastTap = 0;
+                } else { lastTap = now; }
+            }
+        }, { passive: false });
+
+        stage.addEventListener('touchmove', function (e) {
+            if (e.touches.length === 2) {
+                var d = dist(e.touches);
+                scale = Math.min(maxScale, Math.max(minScale, startScale * (d / (startDist || d))));
+                apply();
+                e.preventDefault();
+            } else if (e.touches.length === 1 && scale > 1.02) {
+                tx = startTx + (e.touches[0].clientX - startX);
+                ty = startTy + (e.touches[0].clientY - startY);
+                clampPan(); apply();
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        stage.addEventListener('touchend', function (e) {
+            if (scale <= 1.02) {
+                var dx = 0;
+                if (e.changedTouches && e.changedTouches[0]) {
+                    dx = e.changedTouches[0].clientX - startX;
+                }
+                if (Math.abs(dx) > 60) { show(idx + (dx < 0 ? 1 : -1)); }
+                else { reset(); }
+            } else {
+                clampPan(); apply();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (viewer.style.display !== 'block') return;
+            if (e.key === 'Escape') close();
+            if (e.key === 'ArrowRight') show(idx + 1);
+            if (e.key === 'ArrowLeft') show(idx - 1);
+        });
+    })();
     </script>
 </body>
 </html>
