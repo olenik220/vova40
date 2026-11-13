@@ -52,7 +52,7 @@ def add_security_headers(resp):
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline'; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-        "img-src 'self' data: https://*.img.avito.st https://avito.st https:; "
+        "img-src 'self' data: blob: https://*.img.avito.st https://avito.st https:; "
         "font-src 'self'; "
         "connect-src 'self'"
     )
