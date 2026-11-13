@@ -539,8 +539,13 @@ def export_avito_item(item_id):
     m = re.search(r'_(\d+)$', avito_link)
     avito_id = m.group(1) if m else None
 
-    # --- 1. Если товар уже на Avito — обновляем цену через API ---
-    if avito_id and sale_price > 0:
+    # --- 1. Товар уже на Avito: по строгому правилу НЕ трогаем его через API ---
+    if avito_id:
+        flash('Товар уже размещён на Авито — по правилу существующие объявления не изменяем. '
+              'Цену и текст правьте в кабинете Авито.', 'warning')
+        return redirect(url_for('item_card', item_id=item_id))
+
+    if False:
         tok = avito_get_token()
         if not tok:
             flash('Нет токена Avito API — проверьте настройки', 'danger')
@@ -1081,6 +1086,9 @@ def avito_prepare_item(item_id):
     if not item:
         flash('Товар не найден', 'danger')
         return redirect(url_for('warehouse_choice'))
+    if (item.get('avito_link') or '').strip():
+        flash('Это объявление уже на Авито — по правилу его не трогаем. Изменения вносите вручную на Авито.', 'warning')
+        return redirect(url_for('item_card', item_id=item_id))
     import avito_feed as _af
     state = _af.item_state(item)
     if not state['status_ok']:
@@ -1103,6 +1111,9 @@ def avito_push_item(item_id):
     if not item:
         flash('Товар не найден', 'danger')
         return redirect(url_for('warehouse_choice'))
+    if (item.get('avito_link') or '').strip():
+        flash('Это объявление уже на Авито — по правилу его не трогаем. Изменения вносите вручную на Авито.', 'warning')
+        return redirect(url_for('item_card', item_id=item_id))
     import avito_feed as _af
     state = _af.item_state(item)
     if not state['status_ok']:
@@ -1359,6 +1370,8 @@ def avito_feed_xml():
         safe, missing = False, 0
     if not safe:
         app.logger.warning('avito feed: отдача заблокирована, неизвестных объявлений %s', missing)
+        if 'missing' in dir() and missing == 0 and not st.get('in_feed'):
+            return 'Нет новых объявлений для публикации', 503
         return 'Фид собирается: состав ещё не сверен с аккаунтом', 503
 
     with open(path, encoding='utf-8') as f:

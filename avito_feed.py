@@ -201,9 +201,16 @@ def build(db_path=DB_PATH):
     """Собирает XML и статистику. Возвращает (xml, stats)."""
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    q = "select * from items where status in (%s) order by id" % ",".join("?" * len(FEED_STATUSES))
+    q = ("select * from items where status in (%s) "
+         "and coalesce(avito_link,'')='' order by id") % ",".join("?" * len(FEED_STATUSES))
     rows = [dict(r) for r in conn.execute(q, FEED_STATUSES)]
     conn.close()
+
+    # объявления, которые уже живут на Авито — их не трогаем никогда
+    conn3 = sqlite3.connect(db_path)
+    existing_count = conn3.execute(
+        "select count(*) from items where coalesce(avito_link,'')<>''").fetchone()[0]
+    conn3.close()
 
     ads, skipped, seen_ids = [], [], {}
     for item in rows:
@@ -221,7 +228,7 @@ def build(db_path=DB_PATH):
         seen_ids[xml_id] = item["id"]
         ads.append(render_ad(item, am))
 
-    # сверка с аккаунтом Авито: чего не хватает в фиде и что появится заново
+    # сверка с аккаунтом: в фиде не должно быть ни одного существующего объявления
     acc = account_ads()
     feed_avito_ids = set()
     for item in rows:
@@ -229,6 +236,7 @@ def build(db_path=DB_PATH):
         if m:
             feed_avito_ids.add(m.group(1))
     acc_ids = set(acc.get("ids") or [])
+    touches_existing = sorted(feed_avito_ids & acc_ids)
 
     # все объявления, которые вообще есть в нашей базе (любой статус)
     conn2 = sqlite3.connect(DB_PATH)
@@ -271,7 +279,10 @@ def build(db_path=DB_PATH):
         "planned_archive_count": len(planned_archive),
         "new_for_avito": len(extra),
         # фид можно отдавать только когда в нём нет «потерянных» объявлений
-        "safe": (not acc.get("error")) and len(missing) == 0,
+        "existing_untouched": existing_count,
+        "touches_existing": len(touches_existing),
+        # безопасно, когда фид состоит только из новых товаров
+        "safe": (not acc.get("error")) and len(touches_existing) == 0 and len(ads) > 0,
     }
     return xml, stats
 
@@ -300,8 +311,11 @@ def item_state(item):
     errs = problems(item, am)
     status = (item.get("status") or "").strip()
     in_status = status in FEED_STATUSES
+    on_avito = bool((item.get("avito_link") or "").strip())
     return {
-        "in_feed": in_status and not errs,
+        "on_avito": on_avito,
+        # товары, которые уже на Авито, в фид не попадают — их не трогаем
+        "in_feed": in_status and not errs and not on_avito,
         "status_ok": in_status,
         "issues": errs,
         "status": status,

@@ -173,6 +173,9 @@
         .chip.ok { background:#e8f5e9; color:#2e7d32; }
         .chip.bad { background:#ffebee; color:#c62828; }
         .chip.wait { background:#fff8e1; color:#ef6c00; }
+        .chip.lock { background:#eceff1; color:#37474f; }
+        .avito-locked { background:#eceff1; color:#37474f; border-radius:8px; padding:10px 12px;
+                        font-size:13px; line-height:1.5; word-break:break-all; }
         .avito-issues { background:#ffebee; color:#c62828; border-radius:8px; padding:8px 10px;
                         font-size:13px; margin-bottom:8px; line-height:1.5; }
         .avito-params { font-size:12px; color:#777; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px; }
@@ -222,8 +225,10 @@
         <div id="avito-block" class="avito-panel">
             <div class="avito-head">
                 <b>Публикация на Авито</b>
-                {% if feed_state.in_feed %}
-                    <span class="chip ok"><i class="fa-solid fa-circle-check"></i> в фиде</span>
+                {% if feed_state.on_avito %}
+                    <span class="chip lock"><i class="fa-solid fa-lock"></i> уже на Авито — не трогаем</span>
+                {% elif feed_state.in_feed %}
+                    <span class="chip ok"><i class="fa-solid fa-circle-check"></i> новый, уйдёт в фид</span>
                 {% elif feed_state.status_ok %}
                     <span class="chip bad"><i class="fa-solid fa-triangle-exclamation"></i> в фид не попадёт</span>
                 {% else %}
@@ -246,6 +251,13 @@
                 {% if feed_state.condition %}<span>· {{ feed_state.condition }}</span>{% endif %}
             </div>
 
+            {% if feed_state.on_avito %}
+            <div class="avito-locked">
+                Это объявление уже опубликовано на Авито ({{ item.avito_link }}).
+                По правилу проекта существующие объявления не изменяются из приложения —
+                цену, текст и фото правьте в кабинете Авито.
+            </div>
+            {% else %}
             <div class="avito-actions">
                 <form method="post" action="{{ url_for('avito_prepare_item', item_id=item.id) }}">
                     <button class="btn-avito-2" type="submit"><i class="fa-solid fa-list-check"></i> Подготовить к публикации</button>
@@ -258,10 +270,11 @@
                     <i class="fa-solid fa-download"></i> Скачать XML товара
                 </a>
             </div>
+            {% endif %}
             <div class="avito-hint">
-                «Подготовить» — проверить данные и пересобрать фид. «Отправить» — попросить Авито забрать фид
-                немедленно: публикуется весь файл, а расписание в кабинете решает, сколько объявлений за раз.
-                {% if item.avito_link %}<br>Объявление уже на Авито — при отправке обновится, дубль не создастся.{% endif %}
+                В фид попадают только новые товары. «Подготовить» — проверить данные и пересобрать файл.
+                «Отправить» — попросить Авито забрать файл немедленно; сколько объявлений он опубликует,
+                решает расписание в кабинете.
             </div>
         </div>
 
