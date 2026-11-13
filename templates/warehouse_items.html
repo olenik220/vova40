@@ -62,10 +62,14 @@
 </head>
 <body>
     <div class="header">
+        {% if category %}
+        <a href="{{ url_for('warehouse_subcategories', wh_id=wh_id, category=category) }}">←</a>
+        {% else %}
         <a href="{{ url_for('warehouse_categories', wh_id=wh_id) }}">←</a>
+        {% endif %}
         <div class="title">
-            <h1><img class="logo" src="/static/logo-256.jpg" alt="40" loading="lazy" decoding="async"><span class="wh-name">{{ wh_name }}</span></h1>
-            <div>Найдено: {{ items|length }}{% if status %} · {{ status }}{% endif %}</div>
+            <h1><img class="logo" src="/static/logo-256.jpg" alt="40" loading="lazy" decoding="async"><span class="wh-name">{% if category %}{{ category }}{% else %}{{ wh_name }}{% endif %}</span></h1>
+            <div>{% if subcategory and subcategory != '__none__' %}{{ subcategory }} · {% elif subcategory == '__none__' %}Без подкатегории · {% endif %}Найдено: {{ items|length }}{% if status %} · {{ status }}{% endif %}</div>
         </div>
         {% if is_admin %}
         <div class="links">

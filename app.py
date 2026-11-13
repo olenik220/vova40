@@ -447,6 +447,39 @@ def warehouse_categories(wh_id):
     return render_template('warehouse_categories.html',
         wh_id=wh_id, wh_name=wh_name, cats=cats)
 
+@app.route('/warehouse/<wh_id>/category/<path:category>')
+@login_required
+def warehouse_subcategories(wh_id, category):
+    """Подкатегории внутри категории склада: Куртки, Футболки, Брюки..."""
+    category = (category or '').strip()
+    items = db.get_items_by_warehouse(wh_id, category=category)
+    counter, statuses = {}, {}
+    for it in items:
+        sub = (it.get('subcategory') or '').strip()
+        key = sub or ''
+        counter[key] = counter.get(key, 0) + 1
+        st = it.get('status') or ''
+        statuses.setdefault(key, {})
+        statuses[key][st] = statuses[key].get(st, 0) + 1
+
+    # порядок: сначала те, что есть в справочнике Авито, затем остальные по количеству
+    order = config.AVITO_CATEGORIES.get(category, {}).get('subcategories', [])
+    subs = []
+    for name in order:
+        if name in counter:
+            subs.append({'name': name, 'count': counter[name], 'statuses': statuses.get(name, {})})
+    for name, cnt in sorted(counter.items(), key=lambda x: -x[1]):
+        if name and name not in order:
+            subs.append({'name': name, 'count': cnt, 'statuses': statuses.get(name, {})})
+    empty = counter.get('', 0)
+
+    wh_name = db.get_warehouse_name(wh_id)
+    icon = config.AVITO_CATEGORIES.get(category, {}).get('icon', '\U0001F4E6')
+    return render_template('warehouse_subcategories.html',
+        wh_id=wh_id, wh_name=wh_name, category=category, subs=subs,
+        total=len(items), empty=empty, icon=icon)
+
+
 @app.route('/warehouse/<wh_id>/items')
 @login_required
 def warehouse_items(wh_id):
@@ -455,11 +488,13 @@ def warehouse_items(wh_id):
     category = request.args.get('category', '').strip()
     status = request.args.get('status', '').strip()
     q = request.args.get('q', '').strip()
-    items = db.get_items_by_warehouse(wh_id, article, category, status or None, q=q)
+    subcategory = request.args.get('subcategory', '').strip()
+    items = db.get_items_by_warehouse(wh_id, article, category, status or None, q=q,
+                                      subcategory=subcategory)
     wh_name = 'Все склады' if wh_id == 'all' else db.get_warehouse_name(wh_id)
     return render_template('warehouse_items.html',
         items=items, wh_id=wh_id, wh_name=wh_name,
-        article=article, category=category, status=status, q=q)
+        article=article, category=category, subcategory=subcategory, status=status, q=q)
 
 def ftp_upload_file(local_path, remote_rel_path):
     """Заливает файл на FTP-сервер. remote_rel_path — относительно AVITO_FTP_PATH.

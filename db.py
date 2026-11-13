@@ -294,7 +294,7 @@ class Database:
         finally:
             conn.close()
 
-    def get_items_by_warehouse(self, warehouse, article="", category="", status=None, q=""):
+    def get_items_by_warehouse(self, warehouse, article="", category="", status=None, q="", subcategory=""):
         conn = self._get_conn()
         try:
             conds = []
@@ -312,6 +312,12 @@ class Database:
             if category:
                 conds.append("category=?")
                 vals.append(category)
+            if subcategory:
+                if subcategory == "__none__":
+                    conds.append("coalesce(subcategory,'')=''")
+                else:
+                    conds.append("subcategory=?")
+                    vals.append(subcategory)
             if status:
                 if status == 'Другое':
                     conds.append("status NOT IN ('В закупке','В работе','На Avito','В доставке','Продано')")
