@@ -256,6 +256,8 @@ def main():
                 if not DRY:
                     update_status(conn, it["id"], cur, avito_status=detail_status)
                 continue
+            if guessed and guessed == cur:
+                continue          # статус уже такой же — не шумим в логе каждые 10 минут
             log("#%s: нет в списке, Авито сообщает «%s» -> %s"
                 % (it["id"], detail_status, guessed or "без изменений"))
             if guessed and not DRY:
