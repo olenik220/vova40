@@ -156,6 +156,39 @@ def update_status(conn, item_id, status, avito_link=None, avito_status=None, avi
     conn.execute("UPDATE items SET " + ", ".join(sets) + " WHERE id=?", vals)
 
 
+def fetch_all_items(tok):
+    """Все объявления аккаунта одним списком: 9 запросов вместо 886.
+
+    Возвращает {avito_id: {status, title, price, url}} либо {} при ошибке.
+    """
+    out = {}
+    page = 1
+    while page <= 40:
+        code, body = http("https://api.avito.ru/core/v1/items?per_page=100&page=%d" % page,
+                          headers={"Authorization": "Bearer " + tok}, timeout=40)
+        if code != 200:
+            log("список объявлений: HTTP %s %s" % (code, body[:120]))
+            return {}
+        data = json.loads(body.decode("utf-8", "replace"))
+        res = data.get("resources") or []
+        if not res:
+            break
+        for x in res:
+            price = x.get("price")
+            price = price.get("value") if isinstance(price, dict) else price
+            out[str(x.get("id"))] = {
+                "status": x.get("status") or "",
+                "title": x.get("title") or "",
+                "price": price,
+                "url": x.get("url") or "",
+            }
+        if len(res) < 100:
+            break
+        page += 1
+        time.sleep(0.3)          # вежливая пауза, чтобы не ловить 429
+    return out
+
+
 def main():
     env = load_env()
     tok = get_token(env)
@@ -167,85 +200,97 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     rows = [dict(r) for r in conn.execute(
-        "SELECT id, title, status, avito_link FROM items WHERE coalesce(avito_link,'') <> ''")]
+        "SELECT id, title, status, avito_link, avito_status, avito_finish "
+        "FROM items WHERE coalesce(avito_link,'') <> ''")]
 
     if not rows:
         log("нет товаров с привязкой к Avito")
         conn.close()
         return 0
 
-    changed = errors = 0
-    for it in rows:
-        link = (it["avito_link"] or "").strip()
-        m = None
-        import re as _re
+    remote = fetch_all_items(tok)
+    if not remote:
+        log("не удалось получить список объявлений — выхожу без изменений")
+        conn.close()
+        return 1
+
+    import re as _re
+
+    def extract_id(link):
+        link = (link or "").strip()
         for pat in (r"_(\d+)$", r"/autoload/(\d+)", r"/item/(\d+)", r"(\d{6,})$"):
             m = _re.search(pat, link)
             if m:
-                break
-        if not m:
-            log("#%s: не смог вытащить id объявления из %s" % (it["id"], link[:60]))
+                return m.group(1)
+        return ""
+
+    changed = errors = missing = 0
+    for it in rows:
+        avito_id = extract_id(it["avito_link"])
+        if not avito_id:
+            log("#%s: не смог вытащить id объявления из %s" % (it["id"], (it["avito_link"] or "")[:60]))
             errors += 1
             continue
-        avito_id = m.group(1)
 
-        code, body = fetch_avito_status(tok, user_id, avito_id)
-        if code == 200:
-            try:
-                data = json.loads(body.decode("utf-8"))
-            except Exception:
-                log("#%s: не разобрал ответ API" % it["id"])
+        rec = remote.get(avito_id)
+        if rec is None:
+            # в списке его нет — уточняем точечно, чтобы не поставить неверный статус
+            missing += 1
+            code, body = fetch_avito_status(tok, user_id, avito_id)
+            detail_status = ""
+            if code == 200:
+                try:
+                    detail_status = json.loads(body.decode("utf-8", "replace")).get("status", "")
+                except Exception:
+                    detail_status = ""
+            elif code in (404, 410, 422):
+                detail_status = "removed"
+
+            cur = it["status"] or ""
+            guessed = AVITO_STATUS_MAP.get(detail_status, "")
+            if not detail_status:
+                log("#%s: нет в списке и статус не получен (HTTP %s) — не меняю" % (it["id"], code))
                 errors += 1
                 continue
-            avito_status = data.get("status", "")
-            avito_finish = data.get("finish_time", "") or ""
-            new_status = AVITO_STATUS_MAP.get(avito_status, "")
-
-            # если API когда-нибудь отдаст срок доставки — подхватим
-            eta = ""
-            for key in ("delivery_date", "deliveryDate", "delivery_eta"):
-                if data.get(key):
-                    eta = str(data.get(key))
-                    break
-            if not eta and isinstance(data.get("delivery"), dict):
-                eta = str(data["delivery"].get("date") or data["delivery"].get("eta") or "")
-
-            if not DRY and (new_status or avito_status):
-                # статус и дату окончания объявления сохраняем всегда
-                update_status(conn, it["id"], new_status or (it["status"] or ""),
-                              avito_status=avito_status, avito_finish=avito_finish)
-                if eta:
-                    conn.execute("UPDATE items SET delivery_eta=? WHERE id=?", (eta, it["id"]))
-
-            cur = it["status"] or ""
-            if not new_status:
-                log("#%s: неизвестный статус Avito «%s» (сохранён как есть)" % (it["id"], avito_status))
-                continue
-            if new_status == cur:
-                continue
-            if cur in FINAL and new_status == "На Avito":
-                log("#%s: пропуск отката %s -> На Avito" % (it["id"], cur))
-                continue
-            log("#%s: %s -> %s (Avito: %s, до %s)" % (it["id"], cur, new_status, avito_status, avito_finish or "-"))
-            if not DRY:
-                update_status(conn, it["id"], new_status)
-            changed += 1
-        elif code in (404, 410, 422):
-            cur = it["status"] or ""
             if cur in FINAL:
+                if not DRY:
+                    update_status(conn, it["id"], cur, avito_status=detail_status)
                 continue
-            log("#%s: объявление не найдено (HTTP %s) -> Продано" % (it["id"], code))
-            if not DRY:
-                update_status(conn, it["id"], "Продано")
-            changed += 1
-        else:
-            log("#%s: HTTP %s %s" % (it["id"], code, body[:120]))
-            errors += 1
+            log("#%s: нет в списке, Авито сообщает «%s» -> %s"
+                % (it["id"], detail_status, guessed or "без изменений"))
+            if guessed and not DRY:
+                update_status(conn, it["id"], guessed, avito_status=detail_status)
+            if guessed:
+                changed += 1
+            continue
+
+        avito_status = rec["status"]
+        new_status = AVITO_STATUS_MAP.get(avito_status, "")
+        cur = it["status"] or ""
+
+        if not DRY:
+            update_status(conn, it["id"], new_status or cur,
+                          avito_status=avito_status,
+                          avito_finish=it.get("avito_finish") or "")
+
+        if not new_status:
+            log("#%s: неизвестный статус Avito «%s» (сохранён как есть)" % (it["id"], avito_status))
+            continue
+        if new_status == cur:
+            continue
+        if cur in FINAL and new_status == "На Avito":
+            log("#%s: пропуск отката %s -> На Avito" % (it["id"], cur))
+            continue
+        log("#%s: %s -> %s (Avito: %s)" % (it["id"], cur, new_status, avito_status))
+        if not DRY:
+            update_status(conn, it["id"], new_status)
+        changed += 1
 
     if not DRY:
         conn.commit()
     conn.close()
-    log("итого: проверено %d, изменено %d, ошибок %d" % (len(rows), changed, errors))
+    log("итого: в аккаунте %d, проверено %d, изменено %d, нет в аккаунте %d, ошибок %d"
+        % (len(remote), len(rows), changed, missing, errors))
     return 0
 
 

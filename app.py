@@ -4,7 +4,7 @@
 Vova40 — учёт секонд-хенда. Локальный сервер.
 """
 
-import os, sys, uuid, logging, socket, re, re
+import os, sys, uuid, logging, socket, re
 from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response

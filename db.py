@@ -105,6 +105,20 @@ class Database:
                 except Exception:
                     pass
             conn.commit()
+            # индексы: ускоряют фильтры по складу/статусу и поиск по ссылке/артикулу
+            for _sql in (
+                "PRAGMA journal_mode=WAL",
+                "CREATE INDEX IF NOT EXISTS idx_items_warehouse ON items(warehouse)",
+                "CREATE INDEX IF NOT EXISTS idx_items_status ON items(status)",
+                "CREATE INDEX IF NOT EXISTS idx_items_article ON items(article)",
+                "CREATE INDEX IF NOT EXISTS idx_items_avito_link ON items(avito_link)",
+                "CREATE INDEX IF NOT EXISTS idx_items_sold_at ON items(sold_at)",
+                "CREATE INDEX IF NOT EXISTS idx_items_updated ON items(updated_at)",
+            ):
+                try:
+                    conn.execute(_sql)
+                except Exception:
+                    pass
         except Exception as e:
             logger.error(f"DB init: {e}")
             raise
