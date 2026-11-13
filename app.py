@@ -38,7 +38,7 @@ app.config['MAX_CONTENT_LENGTH'] = 300 * 1024 * 1024
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # True если будет HTTPS
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('COOKIE_SECURE', 'true').lower() == 'true'  # сайт только по HTTPS
 
 # ---- Security headers ----
 @app.after_request
